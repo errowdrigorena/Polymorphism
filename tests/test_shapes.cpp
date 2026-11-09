@@ -1,8 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "Traditional_OOP/Circle.hpp"
-#include "Traditional_OOP/Rectangle.hpp"
-#include "Traditional_OOP/Triangle.hpp"
+import shapes;
 
 TEST(ShapesTest, CircleDraw)
 {

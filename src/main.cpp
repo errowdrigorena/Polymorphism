@@ -1,11 +1,9 @@
 #include <iostream>
 #include <memory>
+#include <string>
 #include <vector>
 
-#include "Traditional_OOP/Circle.hpp"
-#include "Traditional_OOP/Rectangle.hpp"
-#include "Traditional_OOP/Shape.hpp"
-#include "Traditional_OOP/Triangle.hpp"
+import shapes;
 
 int main()
 {

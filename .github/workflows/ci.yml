@@ -30,11 +30,9 @@ jobs:
           apt-get install -y --no-install-recommends \
             g++-16 \
             cmake \
-            make \
+            ninja \
             pkg-config \
             clang-format \
-            clang-tidy \
-            cppcheck \
             libgtest-dev
 
       - name: Configure
@@ -55,11 +53,8 @@ jobs:
       - name: Test sanitizers
         run: ctest --test-dir build-sanitizers --output-on-failure --no-tests=error
 
+      # clang-tidy and cppcheck stay available as CMake targets, but this job
+      # does not run them: they cannot read the module artifacts GCC produces.
       - name: clang-format
         run: cmake --build build --target format-check
 
-      - name: clang-tidy
-        run: cmake --build build --target tidy
-
-      - name: cppcheck
-        run: cmake --build build --target cppcheck

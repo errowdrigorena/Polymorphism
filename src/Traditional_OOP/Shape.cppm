@@ -1,8 +1,10 @@
-#pragma once
+module;
 
 #include <string>
 
-class Shape {
+export module shapes:shape;
+
+export class Shape {
 public:
     virtual ~Shape() = default;
     Shape() = default;
