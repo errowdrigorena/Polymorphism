@@ -30,7 +30,7 @@ jobs:
           apt-get install -y --no-install-recommends \
             g++-16 \
             cmake \
-            ninja \
+            ninja-build \
             pkg-config \
             clang-format \
             libgtest-dev
