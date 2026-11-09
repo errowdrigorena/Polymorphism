@@ -44,7 +44,16 @@ jobs:
         run: cmake --build --preset gcc16
 
       - name: Test
-        run: ctest --test-dir build --output-on-failure
+        run: ctest --test-dir build --output-on-failure --no-tests=error
+
+      - name: Configure sanitizers
+        run: cmake --preset gcc16-sanitizers
+
+      - name: Build sanitizers
+        run: cmake --build --preset gcc16-sanitizers
+
+      - name: Test sanitizers
+        run: ctest --test-dir build-sanitizers --output-on-failure --no-tests=error
 
       - name: clang-format
         run: cmake --build build --target format-check

@@ -11,12 +11,25 @@
         "CMAKE_CXX_STANDARD": "26",
         "CMAKE_CXX_COMPILER": "g++-16"
       }
+    },
+    {
+      "name": "gcc16-sanitizers",
+      "displayName": "GCC 16 C++26 ASan/UBSan",
+      "inherits": "gcc16",
+      "binaryDir": "${sourceDir}/build-sanitizers",
+      "cacheVariables": {
+        "POLYMORPHISM_SANITIZERS": "ON"
+      }
     }
   ],
   "buildPresets": [
     {
       "name": "gcc16",
       "configurePreset": "gcc16"
+    },
+    {
+      "name": "gcc16-sanitizers",
+      "configurePreset": "gcc16-sanitizers"
     }
   ]
 }
