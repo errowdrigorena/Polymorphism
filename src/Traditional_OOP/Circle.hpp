@@ -9,6 +9,7 @@ public:
     std::string draw() const override;
 };
 
-inline std::string Circle::draw() const {
+inline std::string Circle::draw() const
+{
     return "Drawing Circle";
 }

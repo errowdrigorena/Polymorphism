@@ -1,0 +1,35 @@
+# C++ Core Guidelines, naming and layout:
+# NL.17 K&R-derived layout (the style clang-format calls Stroustrup)
+# NL.18 C++-style declarators: T* and T&
+# NL.26 conventional const: const T, not T const
+---
+Language: Cpp
+BasedOnStyle: LLVM
+Standard: Latest
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+AccessModifierOffset: -4
+ColumnLimit: 100
+IndentCaseLabels: false
+
+BreakBeforeBraces: Stroustrup
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+SpaceBeforeParens: ControlStatements
+
+DerivePointerAlignment: false
+PointerAlignment: Left
+ReferenceAlignment: Left
+QualifierAlignment: Left
+
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+# The matching header of a .cpp stays first. Then the standard library, then the project.
+IncludeCategories:
+  - Regex: '^<'
+    Priority: 2
+  - Regex: '^"'
+    Priority: 3

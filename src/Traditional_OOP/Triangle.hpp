@@ -9,6 +9,7 @@ public:
     std::string draw() const override;
 };
 
-inline std::string Triangle::draw() const {
+inline std::string Triangle::draw() const
+{
     return "Drawing Triangle";
 }

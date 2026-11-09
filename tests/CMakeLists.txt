@@ -18,10 +18,16 @@ if(DEFINED gtest_PACKAGE_FOLDER_RELEASE)
             m
     )
 else()
+    if(TARGET GTest::gtest_main)
+        set(GTEST_MAIN_LIB GTest::gtest_main)
+    else()
+        set(GTEST_MAIN_LIB GTest::Main)
+    endif()
+
     target_link_libraries(shapes_tests
         PRIVATE
             shapes
-            GTest::Main
+            ${GTEST_MAIN_LIB}
     )
 endif()
 

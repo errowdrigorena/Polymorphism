@@ -1,0 +1,17 @@
+# Enforcement for the C++ Core Guidelines (isocpp/CppCoreGuidelines).
+# cppcoreguidelines-* is the check group maintained for those rules.
+# bugprone-*, performance-*, and clang-analyzer-* cover the matching
+# correctness and performance rules that do not have a dedicated alias.
+Checks: >
+  -*,
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  bugprone-*,
+  cppcoreguidelines-*,
+  performance-*
+WarningsAsErrors: '*'
+HeaderFilterRegex: '(src|tests)/'
+FormatStyle: file
+CheckOptions:
+  cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor: false
+  cppcoreguidelines-special-member-functions.AllowMissingMoveFunctions: false
