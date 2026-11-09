@@ -1,35 +1,36 @@
 find_package(GTest REQUIRED)
 
-add_executable(shapes_tests
-    test_shapes.cpp
-)
+include(GoogleTest)
 
-if(DEFINED gtest_PACKAGE_FOLDER_RELEASE)
-    set(GTEST_CONAN_INCLUDE "${gtest_PACKAGE_FOLDER_RELEASE}/include")
-    set(GTEST_CONAN_LIB_DIR "${gtest_PACKAGE_FOLDER_RELEASE}/lib")
+function(polymorphism_add_gtest target source)
+    add_executable(${target} ${source})
 
-    target_include_directories(shapes_tests PRIVATE "${GTEST_CONAN_INCLUDE}")
-    target_link_libraries(shapes_tests
-        PRIVATE
-            shapes
-            "${GTEST_CONAN_LIB_DIR}/libgtest_main.a"
-            "${GTEST_CONAN_LIB_DIR}/libgtest.a"
-            pthread
-            m
-    )
-else()
-    if(TARGET GTest::gtest_main)
-        set(GTEST_MAIN_LIB GTest::gtest_main)
+    if(DEFINED gtest_PACKAGE_FOLDER_RELEASE)
+        target_include_directories(${target} PRIVATE "${gtest_PACKAGE_FOLDER_RELEASE}/include")
+        target_link_libraries(${target}
+            PRIVATE
+                ${ARGN}
+                "${gtest_PACKAGE_FOLDER_RELEASE}/lib/libgtest_main.a"
+                "${gtest_PACKAGE_FOLDER_RELEASE}/lib/libgtest.a"
+                pthread
+                m
+        )
     else()
-        set(GTEST_MAIN_LIB GTest::Main)
+        if(TARGET GTest::gtest_main)
+            set(gtest_main GTest::gtest_main)
+        else()
+            set(gtest_main GTest::Main)
+        endif()
+
+        target_link_libraries(${target}
+            PRIVATE
+                ${ARGN}
+                ${gtest_main}
+        )
     endif()
 
-    target_link_libraries(shapes_tests
-        PRIVATE
-            shapes
-            ${GTEST_MAIN_LIB}
-    )
-endif()
+    gtest_discover_tests(${target})
+endfunction()
 
-include(GoogleTest)
-gtest_discover_tests(shapes_tests)
+polymorphism_add_gtest(shapes_tests test_shapes.cpp shapes)
+polymorphism_add_gtest(type_erasure_shapes_tests test_type_erasure_shapes.cpp shapes type_erasure)

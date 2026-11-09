@@ -48,9 +48,12 @@ function(polymorphism_sources_with_extension output_variable extension)
     set("${output_variable}" "${collected}" PARENT_SCOPE)
 endfunction()
 
-set(POLYMORPHISM_TARGETS shapes draw_shapes)
+set(POLYMORPHISM_TARGETS shapes type_erasure draw_shapes)
 if(TARGET shapes_tests)
     list(APPEND POLYMORPHISM_TARGETS shapes_tests)
+endif()
+if(TARGET type_erasure_shapes_tests)
+    list(APPEND POLYMORPHISM_TARGETS type_erasure_shapes_tests)
 endif()
 
 polymorphism_sources_with_extension(POLYMORPHISM_CXX_FILES cpp ${POLYMORPHISM_TARGETS})

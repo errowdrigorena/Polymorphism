@@ -12,5 +12,15 @@ target_sources(shapes
 
 target_compile_features(shapes PUBLIC cxx_std_26)
 
+add_library(type_erasure)
+target_sources(type_erasure
+    PUBLIC
+        FILE_SET CXX_MODULES FILES
+            TypeErasureOOP/drawable.cppm
+            TypeErasureOOP/shape.cppm
+            TypeErasureOOP/type_erasure.cppm
+)
+target_compile_features(type_erasure PUBLIC cxx_std_26)
+
 add_executable(draw_shapes main.cpp)
 target_link_libraries(draw_shapes PRIVATE shapes)
