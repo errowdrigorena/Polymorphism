@@ -14,6 +14,7 @@ function(polymorphism_add_gtest target source)
     target_link_libraries(${target}
         PRIVATE
             ${ARGN}
+            GTest::gmock
             ${gtest_main}
     )
 

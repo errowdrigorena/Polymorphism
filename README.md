@@ -40,7 +40,7 @@ Partitions `:drawable` and `:shape`, re-exported by `type_erasure`. `DrawableSha
 
 - GCC 16. The presets call `g++-16`, and the build uses C++26 named modules.
 - CMake 3.28 or newer, and Ninja.
-- GoogleTest, for the test targets. `find_package(GTest)` skips them when the package is absent. CI installs the Ubuntu package `libgtest-dev`.
+- GoogleTest, for the test targets. `find_package(GTest)` skips them when the package is absent. CI installs the Ubuntu packages `libgtest-dev` and `libgmock-dev`. The tests use Google Mock matchers.
 
 ## Build and run
 
