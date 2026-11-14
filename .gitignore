@@ -1,3 +1,4 @@
 build/
 build-sanitizers/
+build-coverage/
 gcm.cache/

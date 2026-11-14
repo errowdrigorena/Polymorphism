@@ -20,6 +20,15 @@
       "cacheVariables": {
         "POLYMORPHISM_SANITIZERS": "ON"
       }
+    },
+    {
+      "name": "gcc16-coverage",
+      "displayName": "GCC 16 C++26 coverage",
+      "inherits": "gcc16",
+      "binaryDir": "${sourceDir}/build-coverage",
+      "cacheVariables": {
+        "POLYMORPHISM_COVERAGE": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -30,6 +39,10 @@
     {
       "name": "gcc16-sanitizers",
       "configurePreset": "gcc16-sanitizers"
+    },
+    {
+      "name": "gcc16-coverage",
+      "configurePreset": "gcc16-coverage"
     }
   ]
 }

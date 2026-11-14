@@ -8,11 +8,26 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
 option(POLYMORPHISM_SANITIZERS "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+option(POLYMORPHISM_COVERAGE "Instrument the build with gcov" OFF)
+
+if(POLYMORPHISM_COVERAGE AND POLYMORPHISM_SANITIZERS)
+    message(FATAL_ERROR
+        "POLYMORPHISM_COVERAGE and POLYMORPHISM_SANITIZERS need separate build directories.")
+endif()
 
 add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 if(POLYMORPHISM_SANITIZERS)
     add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
     add_link_options(-fsanitize=address,undefined)
+endif()
+if(POLYMORPHISM_COVERAGE)
+    if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        message(FATAL_ERROR "POLYMORPHISM_COVERAGE uses gcov and requires GCC.")
+    endif()
+    # -fprofile-abs-path keeps gcovr pointed at this source tree.
+    # Atomic updates survive ctest running several tests at once.
+    add_compile_options(--coverage -fprofile-abs-path -fprofile-update=atomic)
+    add_link_options(--coverage)
 endif()
 
 add_subdirectory(src)
@@ -22,9 +37,14 @@ if(BUILD_TESTING)
     find_package(GTest QUIET)
     if(GTest_FOUND)
         add_subdirectory(tests)
+    elseif(POLYMORPHISM_COVERAGE)
+        message(FATAL_ERROR
+            "POLYMORPHISM_COVERAGE requires GTest so the tests can generate data.")
     else()
         message(STATUS "GTest not found; tests will not be built")
     endif()
+elseif(POLYMORPHISM_COVERAGE)
+    message(FATAL_ERROR "POLYMORPHISM_COVERAGE requires BUILD_TESTING.")
 endif()
 
 function(polymorphism_sources_with_extension output_variable extension)
@@ -129,6 +149,43 @@ if(CPPCHECK_EXE)
             --suppress=unmatchedSuppression
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         COMMENT "Running cppcheck"
+        USES_TERMINAL
+        VERBATIM
+    )
+endif()
+
+if(POLYMORPHISM_COVERAGE)
+    get_filename_component(cxx_compiler_name "${CMAKE_CXX_COMPILER}" NAME)
+    get_filename_component(cxx_compiler_directory "${CMAKE_CXX_COMPILER}" DIRECTORY)
+    string(REGEX REPLACE "g\\+\\+(-[0-9]+)?$" "gcov\\1" gcov_name "${cxx_compiler_name}")
+    find_program(
+        GCOV_EXE
+        NAMES "${gcov_name}" gcov
+        HINTS "${cxx_compiler_directory}"
+        REQUIRED
+    )
+    find_program(GCOVR_EXE NAMES gcovr REQUIRED)
+
+    # gcov misattributes inline functions and templates in module interface
+    # units, so this report stays informational and does not gate on a percentage.
+    # main.cpp is the demo driver; the tests never execute it.
+    add_custom_target(coverage
+        COMMAND find "${CMAKE_BINARY_DIR}" -type f -name "*.gcda" -delete
+        COMMAND "${CMAKE_CTEST_COMMAND}"
+            --test-dir "${CMAKE_BINARY_DIR}"
+            --output-on-failure
+            --no-tests=error
+        COMMAND "${GCOVR_EXE}"
+            --gcov-executable "${GCOV_EXE}"
+            --root "${CMAKE_SOURCE_DIR}"
+            --filter "${CMAKE_SOURCE_DIR}/src"
+            --exclude "${CMAKE_SOURCE_DIR}/src/main\\.cpp$"
+            "${CMAKE_BINARY_DIR}"
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+        DEPENDS
+            shapes_tests
+            type_erasure_shapes_tests
+        COMMENT "Running tests and reporting coverage for src"
         USES_TERMINAL
         VERBATIM
     )

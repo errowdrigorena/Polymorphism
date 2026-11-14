@@ -33,6 +33,7 @@ jobs:
             ninja-build \
             pkg-config \
             clang-format \
+            gcovr \
             libgtest-dev
 
       - name: Configure
@@ -52,6 +53,15 @@ jobs:
 
       - name: Test sanitizers
         run: ctest --test-dir build-sanitizers --output-on-failure --no-tests=error
+
+      - name: Configure coverage
+        run: cmake --preset gcc16-coverage
+
+      - name: Build coverage
+        run: cmake --build --preset gcc16-coverage
+
+      - name: Coverage
+        run: cmake --build build-coverage --target coverage
 
       # clang-tidy and cppcheck stay available as CMake targets, but this job
       # does not run them: they cannot read the module artifacts GCC produces.
