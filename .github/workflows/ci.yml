@@ -65,8 +65,14 @@ jobs:
         run: cmake --build build-coverage --target coverage
 
       # GITHUB_TOKEN pushes do not start another run of this workflow.
+      # The job container does not own the workspace, so Git refuses to run
+      # until this checkout is marked safe. The variables avoid writing git config.
       - name: Publish coverage badge
         if: github.event_name == 'push'
+        env:
+          GIT_CONFIG_COUNT: "1"
+          GIT_CONFIG_KEY_0: safe.directory
+          GIT_CONFIG_VALUE_0: "*"
         run: |
           git add badges/coverage.svg
           if git diff --cached --quiet; then
