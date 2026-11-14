@@ -3,15 +3,15 @@ add_library(shapes)
 target_sources(shapes
     PUBLIC
         FILE_SET CXX_MODULES FILES
-            Traditional_OOP/Shape.cppm
-            Traditional_OOP/Circle.cppm
-            Traditional_OOP/Triangle.cppm
-            Traditional_OOP/Rectangle.cppm
-            Traditional_OOP/shapes.cppm
+            Traditional_Polymorphism/Shape.cppm
+            Traditional_Polymorphism/Circle.cppm
+            Traditional_Polymorphism/Triangle.cppm
+            Traditional_Polymorphism/Rectangle.cppm
+            Traditional_Polymorphism/shapes.cppm
     PRIVATE
-        Traditional_OOP/Circle.cpp
-        Traditional_OOP/Triangle.cpp
-        Traditional_OOP/Rectangle.cpp
+        Traditional_Polymorphism/Circle.cpp
+        Traditional_Polymorphism/Triangle.cpp
+        Traditional_Polymorphism/Rectangle.cpp
 )
 
 target_compile_features(shapes PUBLIC cxx_std_26)
@@ -20,9 +20,9 @@ add_library(type_erasure)
 target_sources(type_erasure
     PUBLIC
         FILE_SET CXX_MODULES FILES
-            TypeErasureOOP/drawable.cppm
-            TypeErasureOOP/shape.cppm
-            TypeErasureOOP/type_erasure.cppm
+            TypeErasure_Polymorphism/drawable.cppm
+            TypeErasure_Polymorphism/shape.cppm
+            TypeErasure_Polymorphism/type_erasure.cppm
 )
 target_compile_features(type_erasure PUBLIC cxx_std_26)
 
