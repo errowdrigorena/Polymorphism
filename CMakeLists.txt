@@ -165,10 +165,13 @@ if(POLYMORPHISM_COVERAGE)
         REQUIRED
     )
     find_program(GCOVR_EXE NAMES gcovr REQUIRED)
+    find_program(PYTHON3_EXE NAMES python3 REQUIRED)
 
     # gcov misattributes inline functions and templates in module interface
     # units, so this report stays informational and does not gate on a percentage.
     # main.cpp is the demo driver; the tests never execute it.
+    # The SVG is the percentage shown in the README. CI commits it when the
+    # rounded line percentage changes.
     add_custom_target(coverage
         COMMAND find "${CMAKE_BINARY_DIR}" -type f -name "*.gcda" -delete
         COMMAND "${CMAKE_CTEST_COMMAND}"
@@ -180,7 +183,14 @@ if(POLYMORPHISM_COVERAGE)
             --root "${CMAKE_SOURCE_DIR}"
             --filter "${CMAKE_SOURCE_DIR}/src"
             --exclude "${CMAKE_SOURCE_DIR}/src/main\\.cpp$"
+            --json-summary "${CMAKE_BINARY_DIR}/coverage-summary.json"
+            --txt "${CMAKE_BINARY_DIR}/coverage.txt"
             "${CMAKE_BINARY_DIR}"
+        COMMAND "${CMAKE_COMMAND}" -E cat "${CMAKE_BINARY_DIR}/coverage.txt"
+        COMMAND "${PYTHON3_EXE}"
+            "${CMAKE_SOURCE_DIR}/tools/coverage_badge.py"
+            "${CMAKE_BINARY_DIR}/coverage-summary.json"
+            "${CMAKE_SOURCE_DIR}/badges/coverage.svg"
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
         DEPENDS
             shapes_tests

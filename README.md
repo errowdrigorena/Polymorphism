@@ -1,7 +1,6 @@
 # Polymorphism
 
-[![CI](https://github.com/errowdrigorena/Polymorphism/actions/workflows/ci.yml/badge.svg)](https://github.com/errowdrigorena/Polymorphism/actions/workflows/ci.yml)
-[![coverage](https://img.shields.io/badge/coverage-gcov-00599C)](#coverage)
+[![coverage](badges/coverage.svg)](#coverage)
 [![C++26](https://img.shields.io/badge/C%2B%2B-26-00599C?logo=cplusplus&logoColor=white)](https://en.cppreference.com/w/cpp/26)
 [![GCC 16](https://img.shields.io/badge/GCC-16-00599C?logo=gnu&logoColor=white)](#requirements)
 [![CMake 3.28+](https://img.shields.io/badge/CMake-3.28%2B-064F8C?logo=cmake&logoColor=white)](https://cmake.org/cmake/help/latest/)
@@ -75,7 +74,7 @@ ctest --test-dir build-sanitizers --output-on-failure
 
 ## Coverage
 
-The `gcc16-coverage` preset instruments the same tests with gcov. The `coverage` target reruns them and prints a gcovr summary for `src/`. `main.cpp` stays out of that summary, because the tests never run the demo. The percentage is there to read: gcov mis-counts inline functions and templates inside module interface units, so the pass/fail result stays with the tests.
+The `gcc16-coverage` preset instruments the same tests with gcov. The `coverage` target reruns them, prints a gcovr summary for `src/`, and rewrites `badges/coverage.svg` with the rounded line percentage. `main.cpp` stays out of that summary, because the tests never run the demo. On a push, CI commits the SVG when that integer changes. gcov mis-counts inline functions and templates inside module interface units, so the pass/fail result stays with the tests. The badge color follows the percentage.
 
 `gcov-16` ships with GCC 16. The summary also needs `gcovr`.
 
@@ -105,4 +104,4 @@ cmake --build build --target format-check
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs on pushes to `develop` and `master`, and on pull requests. The job uses an Ubuntu resolute container, then the `gcc16`, `gcc16-sanitizers`, and `gcc16-coverage` presets, and finishes with `format-check`. The badge at the top follows the default branch.
+`.github/workflows/ci.yml` runs on pushes to `develop` and `master`, and on pull requests. The job uses an Ubuntu resolute container, then the `gcc16`, `gcc16-sanitizers`, and `gcc16-coverage` presets, and finishes with `format-check`.

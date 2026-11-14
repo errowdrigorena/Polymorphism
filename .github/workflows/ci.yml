@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   check:
@@ -34,7 +34,8 @@ jobs:
             pkg-config \
             clang-format \
             gcovr \
-            libgtest-dev
+            libgtest-dev \
+            python3
 
       - name: Configure
         run: cmake --preset gcc16
@@ -62,6 +63,18 @@ jobs:
 
       - name: Coverage
         run: cmake --build build-coverage --target coverage
+
+      # GITHUB_TOKEN pushes do not start another run of this workflow.
+      - name: Publish coverage badge
+        if: github.event_name == 'push'
+        run: |
+          git add badges/coverage.svg
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "Update the coverage badge."
+          git push origin "HEAD:${GITHUB_REF}"
 
       # clang-tidy and cppcheck stay available as CMake targets, but this job
       # does not run them: they cannot read the module artifacts GCC produces.
