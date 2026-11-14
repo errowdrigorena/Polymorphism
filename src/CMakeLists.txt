@@ -8,6 +8,10 @@ target_sources(shapes
             Traditional_OOP/Triangle.cppm
             Traditional_OOP/Rectangle.cppm
             Traditional_OOP/shapes.cppm
+    PRIVATE
+        Traditional_OOP/Circle.cpp
+        Traditional_OOP/Triangle.cpp
+        Traditional_OOP/Rectangle.cpp
 )
 
 target_compile_features(shapes PUBLIC cxx_std_26)
