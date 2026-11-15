@@ -68,12 +68,15 @@ function(polymorphism_sources_with_extension output_variable extension)
     set("${output_variable}" "${collected}" PARENT_SCOPE)
 endfunction()
 
-set(POLYMORPHISM_TARGETS shapes type_erasure draw_shapes)
+set(POLYMORPHISM_TARGETS shapes type_erasure draw_shapes draw_shapes_reflection)
 if(TARGET shapes_tests)
     list(APPEND POLYMORPHISM_TARGETS shapes_tests)
 endif()
 if(TARGET type_erasure_shapes_tests)
     list(APPEND POLYMORPHISM_TARGETS type_erasure_shapes_tests)
+endif()
+if(TARGET reflection_shapes_tests)
+    list(APPEND POLYMORPHISM_TARGETS reflection_shapes_tests)
 endif()
 
 polymorphism_sources_with_extension(POLYMORPHISM_CXX_FILES cpp ${POLYMORPHISM_TARGETS})
@@ -183,6 +186,7 @@ if(POLYMORPHISM_COVERAGE)
             --root "${CMAKE_SOURCE_DIR}"
             --filter "${CMAKE_SOURCE_DIR}/src"
             --exclude "${CMAKE_SOURCE_DIR}/src/main\\.cpp$"
+            --exclude "${CMAKE_SOURCE_DIR}/src/Reflection_TypeErasure_Polymorphism/main\\.cpp$"
             --json-summary "${CMAKE_BINARY_DIR}/coverage-summary.json"
             --txt "${CMAKE_BINARY_DIR}/coverage.txt"
             "${CMAKE_BINARY_DIR}"

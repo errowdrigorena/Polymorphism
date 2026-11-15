@@ -1,5 +1,5 @@
-# GCC ships the source of `import std;`. Build that module so these libraries
-# can import the standard library instead of including its headers.
+# GCC ships the source of `import std;`. Building it with -freflection puts
+# std::meta in it, and AnyShape can then be instantiated by any importer.
 execute_process(
     COMMAND ${CMAKE_CXX_COMPILER} -print-file-name=libstdc++.modules.json
     OUTPUT_VARIABLE std_modules_json
@@ -15,6 +15,7 @@ target_sources(std_module
         FILE_SET CXX_MODULES BASE_DIRS "${std_module_dir}" FILES "${std_module_source}"
 )
 target_compile_features(std_module PUBLIC cxx_std_26)
+target_compile_options(std_module PUBLIC -freflection)
 
 add_library(shapes)
 
@@ -45,3 +46,20 @@ target_link_libraries(type_erasure PUBLIC std_module)
 
 add_executable(draw_shapes main.cpp)
 target_link_libraries(draw_shapes PRIVATE shapes)
+
+add_library(reflection_type_erasure)
+target_sources(reflection_type_erasure
+    PUBLIC
+        FILE_SET CXX_MODULES FILES
+            Reflection_TypeErasure_Polymorphism/Circle.cppm
+            Reflection_TypeErasure_Polymorphism/Square.cppm
+            Reflection_TypeErasure_Polymorphism/Triangle.cppm
+            Reflection_TypeErasure_Polymorphism/Circle.cpp
+            Reflection_TypeErasure_Polymorphism/Square.cpp
+            Reflection_TypeErasure_Polymorphism/Triangle.cpp
+            Reflection_TypeErasure_Polymorphism/reflection_type_erasure.cppm
+)
+target_link_libraries(reflection_type_erasure PUBLIC std_module)
+
+add_executable(draw_shapes_reflection Reflection_TypeErasure_Polymorphism/main.cpp)
+target_link_libraries(draw_shapes_reflection PRIVATE reflection_type_erasure)
