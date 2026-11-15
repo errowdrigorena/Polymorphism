@@ -15,8 +15,8 @@ int main()
     // A copy owns a new derived object. With std::shared_ptr both would point at one.
     const PolyShape copy = shapes.front();
     std::cout << "Copied: " << copy->draw() << '\n';
-    std::cout << "Same object as the original? " << std::boolalpha
-              << (&*copy == &*shapes.front()) << '\n';
+    std::cout << "Same object as the original? " << std::boolalpha << (&*copy == &*shapes.front())
+              << '\n';
 
     // With std::unique_ptr this line does not compile.
     std::vector<PolyShape> backup = shapes;
