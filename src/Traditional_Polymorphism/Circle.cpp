@@ -1,9 +1,6 @@
-module;
-
-#include <string>
-
 module shapes;
 
+import std;
 import :circle;
 
 std::string Circle::draw() const

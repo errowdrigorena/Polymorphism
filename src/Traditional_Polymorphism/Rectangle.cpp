@@ -1,9 +1,6 @@
-module;
-
-#include <string>
-
 module shapes;
 
+import std;
 import :rectangle;
 
 std::string Rectangle::draw() const

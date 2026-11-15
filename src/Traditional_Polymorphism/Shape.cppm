@@ -1,8 +1,6 @@
-module;
-
-#include <string>
-
 export module shapes:shape;
+
+import std;
 
 export class Shape {
 public:

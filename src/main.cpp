@@ -1,8 +1,4 @@
-#include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-
+import std;
 import shapes;
 
 int main()

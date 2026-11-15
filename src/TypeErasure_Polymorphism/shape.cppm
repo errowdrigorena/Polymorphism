@@ -1,12 +1,6 @@
-module;
-
-#include <concepts>
-#include <string>
-#include <type_traits>
-#include <utility>
-
 export module type_erasure:shape;
 
+import std;
 import :drawable;
 
 export class Shape_TE {

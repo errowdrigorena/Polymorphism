@@ -1,9 +1,6 @@
-module;
-
-#include <string>
-
 export module shapes:rectangle;
 
+import std;
 import :shape;
 
 export class Rectangle final : public Shape {

@@ -1,40 +1,36 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <memory>
-
-import shapes;
+#include <string>
 
 using ::testing::Eq;
 
+std::string circle_draw();
+std::string copied_circle_draw();
+std::string triangle_draw_through_base();
+std::string triangle_draw();
+std::string rectangle_draw();
+
 TEST(ShapesTest, CircleDraw)
 {
-    Circle circle;
-    EXPECT_THAT(circle.draw(), Eq("Drawing Circle"));
+    EXPECT_THAT(circle_draw(), Eq("Drawing Circle"));
 }
 
 TEST(ShapesTest, CopiesConcreteShape)
 {
-    const Circle original;
-    const Circle copy = original;
-
-    EXPECT_THAT(copy.draw(), Eq("Drawing Circle"));
+    EXPECT_THAT(copied_circle_draw(), Eq("Drawing Circle"));
 }
 
 TEST(ShapesTest, DestroysThroughBase)
 {
-    const std::unique_ptr<Shape> triangle = std::make_unique<Triangle>();
-
-    EXPECT_THAT(triangle->draw(), Eq("Drawing Triangle"));
+    EXPECT_THAT(triangle_draw_through_base(), Eq("Drawing Triangle"));
 }
 
 TEST(ShapesTest, TriangleDraw)
 {
-    Triangle triangle;
-    EXPECT_THAT(triangle.draw(), Eq("Drawing Triangle"));
+    EXPECT_THAT(triangle_draw(), Eq("Drawing Triangle"));
 }
 
 TEST(ShapesTest, RectangleDraw)
 {
-    Rectangle rectangle;
-    EXPECT_THAT(rectangle.draw(), Eq("Drawing Rectangle"));
+    EXPECT_THAT(rectangle_draw(), Eq("Drawing Rectangle"));
 }
