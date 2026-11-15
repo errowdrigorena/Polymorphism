@@ -54,7 +54,12 @@ function(polymorphism_sources_with_extension output_variable extension)
             continue()
         endif()
 
+        # Module interface units live in the CXX_MODULES file set, outside SOURCES.
         get_target_property(target_sources "${target_name}" SOURCES)
+        get_target_property(target_module_files "${target_name}" CXX_MODULE_SET)
+        if(target_module_files)
+            list(APPEND target_sources ${target_module_files})
+        endif()
         get_target_property(target_source_dir "${target_name}" SOURCE_DIR)
         foreach(source IN LISTS target_sources)
             if(source MATCHES "\\.${extension}$")

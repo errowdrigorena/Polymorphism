@@ -181,9 +181,9 @@ template <typename T, std::meta::info Slot, std::meta::info Concrete> void assig
 template <typename Model, typename T> VTable<Model> make_vtable()
 {
     VTable<Model> table{};
-    template for (constexpr auto slot : std::define_static_array(
-                      std::meta::nonstatic_data_members_of(
-                          ^^VTable<Model>, std::meta::access_context::current())))
+    template for (constexpr auto slot :
+                  std::define_static_array(std::meta::nonstatic_data_members_of(
+                      ^^VTable<Model>, std::meta::access_context::current())))
     {
         template for (constexpr auto member : std::define_static_array(
                           std::meta::members_of(^^T, std::meta::access_context::current())))
@@ -237,17 +237,17 @@ export template <typename Model> class Poly : public Interface<Model> {
             return;
         }
 
-        template for (constexpr auto surface : std::define_static_array(
-                          std::meta::nonstatic_data_members_of(
-                              ^^Interface<Model>, std::meta::access_context::current())))
+        template for (constexpr auto surface :
+                      std::define_static_array(std::meta::nonstatic_data_members_of(
+                          ^^Interface<Model>, std::meta::access_context::current())))
         {
-            template for (constexpr auto slot : std::define_static_array(
-                              std::meta::nonstatic_data_members_of(
-                                  ^^VTable<Model>, std::meta::access_context::current())))
+            template for (constexpr auto slot :
+                          std::define_static_array(std::meta::nonstatic_data_members_of(
+                              ^^VTable<Model>, std::meta::access_context::current())))
             {
-                template for (constexpr auto method : std::define_static_array(
-                                  std::meta::members_of(^^Model,
-                                                        std::meta::access_context::current())))
+                template for (constexpr auto method :
+                              std::define_static_array(std::meta::members_of(
+                                  ^^Model, std::meta::access_context::current())))
                 {
                     if constexpr (is_regular_method(method) &&
                                   std::meta::identifier_of(surface) ==
@@ -265,8 +265,7 @@ public:
     Poly() = default;
 
     template <typename T>
-        requires(implements_model<std::decay_t<T>, Model>() &&
-                 !std::same_as<std::decay_t<T>, Poly>)
+        requires(implements_model<std::decay_t<T>, Model>() && !std::same_as<std::decay_t<T>, Poly>)
     Poly(T&& shape)
         : object_(new std::decay_t<T>(std::forward<T>(shape))),
           vtable_(&vtable_for<std::decay_t<T>>())
