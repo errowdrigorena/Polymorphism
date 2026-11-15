@@ -68,16 +68,26 @@ function(polymorphism_sources_with_extension output_variable extension)
     set("${output_variable}" "${collected}" PARENT_SCOPE)
 endfunction()
 
-set(POLYMORPHISM_TARGETS shapes type_erasure draw_shapes draw_shapes_reflection)
-if(TARGET shapes_tests)
-    list(APPEND POLYMORPHISM_TARGETS shapes_tests)
-endif()
-if(TARGET type_erasure_shapes_tests)
-    list(APPEND POLYMORPHISM_TARGETS type_erasure_shapes_tests)
-endif()
-if(TARGET reflection_shapes_tests)
-    list(APPEND POLYMORPHISM_TARGETS reflection_shapes_tests)
-endif()
+set(POLYMORPHISM_TARGETS
+    shapes
+    type_erasure
+    polymorphic
+    reflection_type_erasure
+    draw_shapes
+    draw_shapes_polymorphic
+    draw_shapes_reflection
+)
+set(POLYMORPHISM_TEST_TARGETS
+    shapes_tests
+    type_erasure_shapes_tests
+    polymorphic_shapes_tests
+    reflection_shapes_tests
+)
+foreach(test_target IN LISTS POLYMORPHISM_TEST_TARGETS)
+    if(TARGET ${test_target})
+        list(APPEND POLYMORPHISM_TARGETS ${test_target})
+    endif()
+endforeach()
 
 polymorphism_sources_with_extension(POLYMORPHISM_CXX_FILES cpp ${POLYMORPHISM_TARGETS})
 polymorphism_sources_with_extension(POLYMORPHISM_HEADER_FILES hpp ${POLYMORPHISM_TARGETS})
@@ -185,8 +195,7 @@ if(POLYMORPHISM_COVERAGE)
             --gcov-executable "${GCOV_EXE}"
             --root "${CMAKE_SOURCE_DIR}"
             --filter "${CMAKE_SOURCE_DIR}/src"
-            --exclude "${CMAKE_SOURCE_DIR}/src/main\\.cpp$"
-            --exclude "${CMAKE_SOURCE_DIR}/src/Reflection_TypeErasure_Polymorphism/main\\.cpp$"
+            --exclude "${CMAKE_SOURCE_DIR}/src/(.*/)?main\\.cpp$"
             --json-summary "${CMAKE_BINARY_DIR}/coverage-summary.json"
             --txt "${CMAKE_BINARY_DIR}/coverage.txt"
             "${CMAKE_BINARY_DIR}"
@@ -196,9 +205,7 @@ if(POLYMORPHISM_COVERAGE)
             "${CMAKE_BINARY_DIR}/coverage-summary.json"
             "${CMAKE_SOURCE_DIR}/badges/coverage.svg"
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-        DEPENDS
-            shapes_tests
-            type_erasure_shapes_tests
+        DEPENDS ${POLYMORPHISM_TEST_TARGETS}
         COMMENT "Running tests and reporting coverage for src"
         USES_TERMINAL
         VERBATIM

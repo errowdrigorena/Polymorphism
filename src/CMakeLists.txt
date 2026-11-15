@@ -47,6 +47,17 @@ target_link_libraries(type_erasure PUBLIC std_module)
 add_executable(draw_shapes main.cpp)
 target_link_libraries(draw_shapes PRIVATE shapes)
 
+add_library(polymorphic)
+target_sources(polymorphic
+    PUBLIC
+        FILE_SET CXX_MODULES FILES
+            Polymorphic_Polymorphism/polymorphic.cppm
+)
+target_link_libraries(polymorphic PUBLIC shapes std_module)
+
+add_executable(draw_shapes_polymorphic Polymorphic_Polymorphism/main.cpp)
+target_link_libraries(draw_shapes_polymorphic PRIVATE polymorphic)
+
 add_library(reflection_type_erasure)
 target_sources(reflection_type_erasure
     PUBLIC

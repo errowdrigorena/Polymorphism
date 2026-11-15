@@ -5,9 +5,14 @@
 [![GCC 16](https://img.shields.io/badge/GCC-16-00599C?logo=gnu&logoColor=white)](#requirements)
 [![CMake 3.28+](https://img.shields.io/badge/CMake-3.28%2B-064F8C?logo=cmake&logoColor=white)](https://cmake.org/cmake/help/latest/)
 
-Two small C++26 libraries that print a shape, built as named modules. `shapes` is a classic abstract base with three concrete types. `type_erasure` is a value that stores any object with a `draw()` method and calls it through a hand-written vtable.
+Four small C++26 libraries that put shapes behind one interface, built as named modules:
 
-`src/main.cpp` walks the classic hierarchy. The type-erased value is exercised by the tests.
+- `shapes` is a classic abstract base with three concrete types.
+- `type_erasure` is a value that stores any object with a `draw()` method and calls it through a hand-written vtable.
+- `polymorphic` gives the `shapes` hierarchy value semantics with `std::polymorphic`.
+- `reflection_type_erasure` uses C++26 reflection to generate the vtable and the call surface from a model class.
+
+`src/main.cpp` walks the classic hierarchy. `polymorphic` and `reflection_type_erasure` have their own demos. The type-erased value is exercised by the tests.
 
 ## Contents
 
@@ -25,6 +30,8 @@ Two small C++26 libraries that print a shape, built as named modules. `shapes` i
 | --- | --- |
 | `src/Traditional_Polymorphism/` | Module `shapes` |
 | `src/TypeErasure_Polymorphism/` | Module `type_erasure` |
+| `src/Polymorphic_Polymorphism/` | Module `polymorphic` and demo `draw_shapes_polymorphic` |
+| `src/Reflection_TypeErasure_Polymorphism/` | Module `reflection_type_erasure` and demo `draw_shapes_reflection` |
 | `src/main.cpp` | Demo executable `draw_shapes` |
 | `tests/` | GoogleTest drivers |
 
@@ -35,6 +42,16 @@ Partitions `:shape`, `:circle`, `:triangle`, and `:rectangle`, re-exported by th
 ### `type_erasure`
 
 Partitions `:drawable` and `:shape`, re-exported by `type_erasure`. `DrawableShape_TE` accepts a type whose `draw() const` returns something convertible to `std::string`. `Shape_TE` owns that object and dispatches `draw`, copy, and destroy through a private vtable. The constructor template and `vtable_for` stay in the interface unit, because callers instantiate them. An empty `Shape_TE` reports `has_value() == false`, and `draw()` returns `"<empty>"`.
+
+### `polymorphic`
+
+Re-exports `shapes` and adds `PolyShape`, an alias for `std::polymorphic<Shape>`. A `PolyShape` owns a `Circle`, `Triangle`, `Rectangle`, or any other class derived from `Shape`. Copying it copies the derived object, so a `std::vector<PolyShape>` behaves like a vector of values. After a move, the source reports `valueless_after_move()`. Any type stored this way must derive from `Shape`. `type_erasure` and `reflection_type_erasure` accept unrelated types.
+
+### `reflection_type_erasure`
+
+`ShapeModel` lists the methods every stored type provides: `draw()`, `area()`, and `perimeter()`. A namespace-scope `consteval` block reads that class with `std::meta` and uses `define_aggregate` to generate two structs. `VTable<Model>` holds one function pointer per method plus copy and destroy. `Interface<Model>` holds one callable data member per method. `Poly<Model>` owns the object the same way `Shape_TE` does and inherits `Interface<Model>`, so `AnyShape` (`Poly<ShapeModel>`) is called as `shape.area()`. Any type whose public methods match the model is accepted. Another model needs one more `define_vtable` and `define_interface` call in that block.
+
+The library needs `-freflection`. The build compiles GCC's `import std;` module with that flag, so `std::meta` is available to every importer.
 
 ## Requirements
 
@@ -56,6 +73,10 @@ Drawing Triangle
 Drawing Rectangle
 ```
 
+`./build/src/draw_shapes_polymorphic` prints the same three lines and then a copy of the first shape. `./build/src/draw_shapes_reflection` prints each shape with its area and perimeter.
+
+GoogleTest's headers and `import std;` cannot share a translation unit with GCC 16. Each test target therefore has two files: a `*_cases.cpp` that imports the modules and runs each case, and a `test_*.cpp` that includes GoogleTest and checks the results.
+
 ```bash
 ctest --test-dir build --output-on-failure
 ```
@@ -74,7 +95,7 @@ ctest --test-dir build-sanitizers --output-on-failure
 
 ## Coverage
 
-The `gcc16-coverage` preset instruments the same tests with gcov. The `coverage` target reruns them, prints a gcovr summary for `src/`, and rewrites `badges/coverage.svg` with the rounded line percentage. `main.cpp` stays out of that summary, because the tests never run the demo. On a push, CI commits the SVG when that integer changes. gcov mis-counts inline functions and templates inside module interface units, so the pass/fail result stays with the tests. The badge color follows the percentage.
+The `gcc16-coverage` preset instruments the same tests with gcov. The `coverage` target reruns them, prints a gcovr summary for `src/`, and rewrites `badges/coverage.svg` with the rounded line percentage. Every demo `main.cpp` stays out of that summary, because the tests never run the demos. On a push, CI commits the SVG when that integer changes. gcov mis-counts inline functions and templates inside module interface units, so the pass/fail result stays with the tests. The badge color follows the percentage.
 
 `gcov-16` ships with GCC 16. The summary also needs `gcovr`.
 
