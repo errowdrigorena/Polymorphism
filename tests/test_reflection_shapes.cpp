@@ -15,6 +15,8 @@ float copied_circle_area();
 float moved_square_area();
 float copy_assigned_area();
 float move_assigned_perimeter();
+float pure_model_value();
+bool implemented_model_is_rejected();
 
 namespace {
 
@@ -43,6 +45,16 @@ TEST(ReflectionShapesTest, ReportsTriangleAreaAndPerimeter)
 TEST(ReflectionShapesTest, AcceptsATypeDefinedOutsideTheModule)
 {
     EXPECT_THAT(dot_area(), Eq(1.0f));
+}
+
+TEST(ReflectionShapesTest, AcceptsAnInterfaceOfPureVirtualMethods)
+{
+    EXPECT_THAT(pure_model_value(), Eq(7.0f));
+}
+
+TEST(ReflectionShapesTest, RejectsAMethodThatHasABody)
+{
+    EXPECT_TRUE(implemented_model_is_rejected());
 }
 
 TEST(ReflectionShapesTest, CopiesTheStoredShape)

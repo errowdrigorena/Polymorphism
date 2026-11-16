@@ -49,7 +49,7 @@ Re-exports `shapes` and adds `PolyShape`, an alias for `std::polymorphic<Shape>`
 
 ### `reflection_type_erasure`
 
-`ShapeModel` lists the methods every stored type provides: `draw()`, `area()`, and `perimeter()`. A namespace-scope `consteval` block reads that class with `std::meta` and uses `define_aggregate` to generate two structs. `VTable<Model>` holds one function pointer per method plus copy and destroy. `Interface<Model>` holds one callable data member per method. `Poly<Model>` owns the object the same way `Shape_TE` does and inherits `Interface<Model>`, so `AnyShape` (`Poly<ShapeModel>`) is called as `shape.area()`. Any type whose public methods match the model is accepted. Another model needs one more `define_vtable` and `define_interface` call in that block.
+`ShapeModel` is the interface every stored type provides: pure virtual `draw()`, `area()`, and `perimeter()`. A method that is not pure virtual stops the build. A namespace-scope `consteval` block reads that class with `std::meta` and uses `define_aggregate` to generate two structs. `VTable<Model>` holds one function pointer per method plus copy and destroy. `Interface<Model>` holds one callable data member per method. `Poly<Model>` owns the object the same way `Shape_TE` does and inherits `Interface<Model>`, so `AnyShape` (`Poly<ShapeModel>`) is called as `shape.area()`. Any type whose public methods match the model is accepted. Another interface calls `define_model<ThatInterface>()` from its own consteval block.
 
 The library needs `-freflection`. The build compiles GCC's `import std;` module with that flag, so `std::meta` is available to every importer.
 

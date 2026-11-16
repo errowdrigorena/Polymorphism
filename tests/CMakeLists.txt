@@ -1,4 +1,13 @@
-find_package(GTest REQUIRED)
+find_package(GTest QUIET)
+if(NOT GTest_FOUND)
+    if(POLYMORPHISM_COVERAGE)
+        message(FATAL_ERROR
+            "POLYMORPHISM_COVERAGE requires GTest so the tests can generate data.")
+    else()
+        message(STATUS "GTest not found; GoogleTest targets will not be built")
+    endif()
+    return()
+endif()
 
 include(GoogleTest)
 
@@ -28,4 +37,8 @@ target_sources(type_erasure_shapes_tests PRIVATE type_erasure_shapes_cases.cpp)
 polymorphism_add_gtest(polymorphic_shapes_tests test_polymorphic_shapes.cpp polymorphic)
 target_sources(polymorphic_shapes_tests PRIVATE polymorphic_shapes_cases.cpp)
 polymorphism_add_gtest(reflection_shapes_tests test_reflection_shapes.cpp reflection_type_erasure)
-target_sources(reflection_shapes_tests PRIVATE reflection_shapes_cases.cpp)
+target_sources(reflection_shapes_tests PRIVATE
+    reflection_shapes_cases.cpp
+    reflection_pure_model.cpp
+    reflection_impure_model.cpp
+)

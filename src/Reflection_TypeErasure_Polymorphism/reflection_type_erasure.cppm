@@ -6,12 +6,46 @@ export import :circle;
 export import :square;
 export import :triangle;
 
-// A function is part of the model when it is a public, named, non-special member.
+// A stored type supplies a public, named, non-special member.
 consteval bool is_regular_method(std::meta::info member)
 {
     return std::meta::is_function(member) && std::meta::is_class_member(member) &&
            std::meta::is_public(member) && !std::meta::is_special_member_function(member) &&
            std::meta::has_identifier(member);
+}
+
+// The model contributes only its pure virtual methods. Its destructor is a
+// special member, so it stays out of the vtable.
+consteval bool is_interface_method(std::meta::info member)
+{
+    return is_regular_method(member) && std::meta::is_pure_virtual(member);
+}
+
+// Every non-special member function has to be pure virtual. Constructors and
+// the destructor are special members and are not part of this check.
+template <typename Model> consteval void require_pure_virtual_methods()
+{
+    constexpr auto access = std::meta::access_context::unchecked();
+    const auto total = std::meta::members_of(^^Model, access).size();
+    for (std::size_t index = 0; index < total; ++index) {
+        const auto member = std::meta::members_of(^^Model, access)[index];
+        if (!std::meta::is_function(member) || !std::meta::is_class_member(member) ||
+            std::meta::is_special_member_function(member)) {
+            continue;
+        }
+        if (std::meta::is_pure_virtual(member)) {
+            continue;
+        }
+
+        std::string message{"model method must be pure virtual: "};
+        if (std::meta::has_identifier(member)) {
+            message += std::meta::identifier_of(member);
+        }
+        else {
+            message += std::meta::display_string_of(member);
+        }
+        throw std::meta::exception(message, member);
+    }
 }
 
 template <typename R, typename... Args> using ErasedFn = R (*)(void*, Args...);
@@ -56,19 +90,13 @@ consteval std::meta::info callable_fn_of(std::meta::info member)
     return std::meta::substitute(^^Fn, arguments);
 }
 
-// The methods of this class are the vtable. Any other class of methods works the same way.
+// These pure virtual methods are the vtable. Any other interface works the same way.
 export struct ShapeModel {
-    void draw()
-    {
-    }
-    float area()
-    {
-        return {};
-    }
-    float perimeter()
-    {
-        return {};
-    }
+    virtual ~ShapeModel() = default;
+
+    virtual void draw() = 0;
+    virtual float area() = 0;
+    virtual float perimeter() = 0;
 };
 
 using CopyFn = void* (*)(const void*);
@@ -82,12 +110,14 @@ export template <typename Model> struct Interface;
 
 template <typename Model> consteval void define_vtable()
 {
+    require_pure_virtual_methods<Model>();
+
     constexpr auto access = std::meta::access_context::current();
     const auto total = std::meta::members_of(^^Model, access).size();
     std::vector<std::meta::info> methods;
     for (std::size_t index = 0; index < total; ++index) {
         const auto member = std::meta::members_of(^^Model, access)[index];
-        if (is_regular_method(member)) {
+        if (is_interface_method(member)) {
             methods.push_back(member);
         }
     }
@@ -116,7 +146,7 @@ template <typename Model> consteval void define_interface()
     std::vector<std::meta::info> specs;
     for (std::size_t index = 0; index < total; ++index) {
         const auto member = std::meta::members_of(^^Model, access)[index];
-        if (!is_regular_method(member)) {
+        if (!is_interface_method(member)) {
             continue;
         }
         std::meta::data_member_options options{};
@@ -127,11 +157,17 @@ template <typename Model> consteval void define_interface()
     std::meta::define_aggregate(^^Interface<Model>, specs);
 }
 
-// define_aggregate has to run from a consteval block. Add a line here for another model.
+// define_aggregate has to run from a consteval block. An importer registers
+// another interface with define_model<ThatInterface>() in its own block.
+export template <typename Model> consteval void define_model()
+{
+    define_vtable<Model>();
+    define_interface<Model>();
+}
+
 consteval
 {
-    define_vtable<ShapeModel>();
-    define_interface<ShapeModel>();
+    define_model<ShapeModel>();
 }
 
 template <typename T, typename Model> consteval bool implements_model()
@@ -140,7 +176,7 @@ template <typename T, typename Model> consteval bool implements_model()
     const auto total = std::meta::members_of(^^Model, access).size();
     for (std::size_t index = 0; index < total; ++index) {
         const auto required = std::meta::members_of(^^Model, access)[index];
-        if (!is_regular_method(required)) {
+        if (!is_interface_method(required)) {
             continue;
         }
 
@@ -249,7 +285,7 @@ export template <typename Model> class Poly : public Interface<Model> {
                               std::define_static_array(std::meta::members_of(
                                   ^^Model, std::meta::access_context::current())))
                 {
-                    if constexpr (is_regular_method(method) &&
+                    if constexpr (is_interface_method(method) &&
                                   std::meta::identifier_of(surface) ==
                                       std::meta::identifier_of(slot) &&
                                   std::meta::identifier_of(slot) ==
