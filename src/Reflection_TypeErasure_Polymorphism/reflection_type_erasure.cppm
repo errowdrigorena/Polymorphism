@@ -66,7 +66,7 @@ template <typename R, typename... Args> struct Fn {
                 return R{};
             }
         }
-        return fn_(self_, args...);
+        return fn_(self_, std::forward<Args>(args)...);
     }
 };
 
@@ -170,6 +170,27 @@ consteval
     define_model<ShapeModel>();
 }
 
+consteval bool same_signature(std::meta::info required, std::meta::info candidate)
+{
+    if (std::meta::return_type_of(candidate) != std::meta::return_type_of(required)) {
+        return false;
+    }
+    const auto count = std::meta::parameters_of(required).size();
+    if (std::meta::parameters_of(candidate).size() != count) {
+        return false;
+    }
+    for (std::size_t index = 0; index < count; ++index) {
+        const auto required_parameter =
+            std::meta::type_of(std::meta::parameters_of(required)[index]);
+        const auto candidate_parameter =
+            std::meta::type_of(std::meta::parameters_of(candidate)[index]);
+        if (required_parameter != candidate_parameter) {
+            return false;
+        }
+    }
+    return true;
+}
+
 template <typename T, typename Model> consteval bool implements_model()
 {
     constexpr auto access = std::meta::access_context::current();
@@ -186,9 +207,7 @@ template <typename T, typename Model> consteval bool implements_model()
             const auto candidate = std::meta::members_of(^^T, access)[candidate_index];
             if (is_regular_method(candidate) &&
                 std::meta::identifier_of(candidate) == std::meta::identifier_of(required) &&
-                std::meta::return_type_of(candidate) == std::meta::return_type_of(required) &&
-                std::meta::parameters_of(candidate).size() ==
-                    std::meta::parameters_of(required).size()) {
+                same_signature(required, candidate)) {
                 found = true;
             }
         }
@@ -199,19 +218,35 @@ template <typename T, typename Model> consteval bool implements_model()
     return true;
 }
 
-template <typename T, std::meta::info Slot, std::meta::info Concrete> void assign_slot(auto& table)
+// One instantiation per parameter. parameters_of returns a temporary vector,
+// so the index stays in the alias instead of a pack that holds that vector.
+template <std::meta::info Member, std::size_t Index>
+using parameter_type_at = [:std::meta::type_of(std::meta::parameters_of(Member)[Index]):];
+
+template <typename T, std::meta::info Slot, std::meta::info Concrete, std::size_t... ParameterIndex>
+void assign_slot(auto& table, std::index_sequence<ParameterIndex...>)
 {
-    static_assert(std::meta::parameters_of(Concrete).size() == 0);
     using Result = [:std::meta::return_type_of(Concrete):];
 
     if constexpr (std::is_void_v<Result>) {
-        table.[:Slot:] = [](void* object) { static_cast<T*>(object)->[:Concrete:](); };
-    }
-    else {
-        table.[:Slot:] = [](void* object) -> Result {
-            return static_cast<T*>(object)->[:Concrete:]();
+        table.[:Slot:] = [](void* object, parameter_type_at<Concrete, ParameterIndex>... args) {
+            static_cast<T*>(object)->[:Concrete:](
+                std::forward<parameter_type_at<Concrete, ParameterIndex>>(args)...);
         };
     }
+    else {
+        table.[:Slot:] =
+            [](void* object, parameter_type_at<Concrete, ParameterIndex>... args) -> Result {
+            return static_cast<T*>(object)->[:Concrete:](
+                std::forward<parameter_type_at<Concrete, ParameterIndex>>(args)...);
+        };
+    }
+}
+
+template <typename T, std::meta::info Slot, std::meta::info Concrete> void assign_slot(auto& table)
+{
+    constexpr auto count = std::meta::parameters_of(Concrete).size();
+    assign_slot<T, Slot, Concrete>(table, std::make_index_sequence<count>{});
 }
 
 template <typename Model, typename T> VTable<Model> make_vtable()
@@ -239,31 +274,42 @@ template <typename Model, typename T> VTable<Model> make_vtable()
 // Same ownership as the hand-written type erasure. Model supplies the vtable,
 // and Interface exposes those methods as shape.draw().
 export template <typename Model> class Poly : public Interface<Model> {
-    template <std::meta::info Surface, std::meta::info Slot, std::meta::info Method>
-    void bind_method()
+    template <std::meta::info Surface, std::meta::info Slot, std::meta::info Method,
+              std::size_t... ParameterIndex>
+    void bind_method(std::index_sequence<ParameterIndex...>)
     {
         using Result = [:std::meta::return_type_of(Method):];
-        static_assert(std::meta::parameters_of(Method).size() == 0);
-
         auto& target = static_cast<Interface<Model>&>(*this).[:Surface:];
         if constexpr (std::is_void_v<Result>) {
-            target.fn_ = [](void* self) {
+            target.fn_ = [](void* self, parameter_type_at<Method, ParameterIndex>... args) {
                 auto* poly = static_cast<Poly*>(self);
                 if (poly->object_ != nullptr) {
-                    poly->vtable_->[:Slot:](poly->object_);
+                    poly->vtable_->[:Slot:](
+                        poly->object_,
+                        std::forward<parameter_type_at<Method, ParameterIndex>>(args)...);
                 }
             };
         }
         else {
-            target.fn_ = [](void* self) -> Result {
+            target.fn_ =
+                [](void* self, parameter_type_at<Method, ParameterIndex>... args) -> Result {
                 auto* poly = static_cast<Poly*>(self);
                 if (poly->object_ == nullptr) {
                     return Result{};
                 }
-                return poly->vtable_->[:Slot:](poly->object_);
+                return poly->vtable_->[:Slot:](
+                    poly->object_,
+                    std::forward<parameter_type_at<Method, ParameterIndex>>(args)...);
             };
         }
         target.self_ = this;
+    }
+
+    template <std::meta::info Surface, std::meta::info Slot, std::meta::info Method>
+    void bind_method()
+    {
+        constexpr auto count = std::meta::parameters_of(Method).size();
+        bind_method<Surface, Slot, Method>(std::make_index_sequence<count>{});
     }
 
     void bind()

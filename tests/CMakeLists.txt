@@ -41,4 +41,5 @@ target_sources(reflection_shapes_tests PRIVATE
     reflection_shapes_cases.cpp
     reflection_pure_model.cpp
     reflection_impure_model.cpp
+    reflection_parameter_model.cpp
 )

@@ -17,6 +17,9 @@ float copy_assigned_area();
 float move_assigned_perimeter();
 float pure_model_value();
 bool implemented_model_is_rejected();
+float scaled_parameter();
+float blended_parameter();
+float accumulated_parameter();
 
 namespace {
 
@@ -55,6 +58,13 @@ TEST(ReflectionShapesTest, AcceptsAnInterfaceOfPureVirtualMethods)
 TEST(ReflectionShapesTest, RejectsAMethodThatHasABody)
 {
     EXPECT_TRUE(implemented_model_is_rejected());
+}
+
+TEST(ReflectionShapesTest, ForwardsEveryDeclaredParameter)
+{
+    EXPECT_THAT(scaled_parameter(), Eq(6.5f));
+    EXPECT_THAT(blended_parameter(), Eq(2.0f));
+    EXPECT_THAT(accumulated_parameter(), Eq(14.0f));
 }
 
 TEST(ReflectionShapesTest, CopiesTheStoredShape)
