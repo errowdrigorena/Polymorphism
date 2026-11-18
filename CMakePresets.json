@@ -29,6 +29,15 @@
       "cacheVariables": {
         "POLYMORPHISM_COVERAGE": "ON"
       }
+    },
+    {
+      "name": "gcc16-benchmarks",
+      "displayName": "GCC 16 C++26 benchmarks",
+      "inherits": "gcc16",
+      "binaryDir": "${sourceDir}/build-benchmarks",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
     }
   ],
   "buildPresets": [
@@ -43,6 +52,10 @@
     {
       "name": "gcc16-coverage",
       "configurePreset": "gcc16-coverage"
+    },
+    {
+      "name": "gcc16-benchmarks",
+      "configurePreset": "gcc16-benchmarks"
     }
   ]
 }

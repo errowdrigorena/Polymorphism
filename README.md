@@ -21,6 +21,7 @@ Four small C++26 libraries that put shapes behind one interface, built as named 
 - [Build and run](#build-and-run)
 - [Sanitizers](#sanitizers)
 - [Coverage](#coverage)
+- [Benchmarks](#benchmarks)
 - [Local checks](#local-checks)
 - [Continuous integration](#continuous-integration)
 
@@ -34,6 +35,7 @@ Four small C++26 libraries that put shapes behind one interface, built as named 
 | `src/Reflection_TypeErasure_Polymorphism/` | Module `reflection_type_erasure` and demo `draw_shapes_reflection` |
 | `src/main.cpp` | Demo executable `draw_shapes` |
 | `tests/` | GoogleTest drivers |
+| `benchmarks/` | Release timings for dispatch, copy, and construction |
 
 ### `shapes`
 
@@ -58,6 +60,7 @@ The library needs `-freflection`. The build compiles GCC's `import std;` module 
 - GCC 16. The presets call `g++-16`, and the build uses C++26 named modules.
 - CMake 3.28 or newer, and Ninja.
 - GoogleTest, for the test targets. `find_package(GTest)` skips them when the package is absent. CI installs the Ubuntu packages `libgtest-dev` and `libgmock-dev`. The tests use Google Mock matchers.
+- Google Benchmark, for `polymorphism_benchmarks`. `find_package(benchmark)` skips that target when the package is absent. CI installs the Ubuntu package `libbenchmark-dev`.
 
 ## Build and run
 
@@ -106,6 +109,30 @@ cmake --build build-coverage --target coverage
 ```
 
 Coverage and sanitizers are separate configures. Turning both options on in one build directory stops at configure time.
+
+## Benchmarks
+
+`benchmarks/` builds `polymorphism_benchmarks` with Google Benchmark. It is not a test. The `gcc16` preset compiles it when the package is present, and CI builds the target without running it. Timings come from the Release preset. A Debug run says so and is not worth reading.
+
+Google Benchmark's headers and `import std;` cannot share a translation unit with this GCC, the same limit as GoogleTest. `benchmark_work` is a module whose interface does not import `std`. `timer.cpp` includes the library and imports that interface. `benchmark_work.cpp` is the implementation unit and imports `std` and the shape modules.
+
+```bash
+cmake --preset gcc16-benchmarks
+cmake --build --preset gcc16-benchmarks
+./build-benchmarks/polymorphism_benchmarks --benchmark_counters_tabular=true
+```
+
+`--benchmark_filter=area` selects one family. Each iteration walks 12288 objects. `items_per_second` counts one `draw()`, `area()`, copy, or build. The `bytes` counter is `sizeof` the handle, or the object itself for `direct`. Ubuntu's `libbenchmark-dev` is built without `NDEBUG`, so the run prints that the benchmark library is Debug. The code under test still follows the preset.
+
+The libraries do not share one signature, so the names split into `draw/` and `area/`. `direct` stores one concrete type in a contiguous array. The other benchmarks alternate three types.
+
+`draw()` returns `std::string` for `shapes`, `type_erasure`, and `polymorphic`. The iteration builds that string, and the string fits in the small-string buffer. That construction is what these benchmarks measure. `shapes` is a `std::unique_ptr<Shape>`. `type_erasure` stores the same concrete types `direct` calls. Those types are unrelated to `Shape`.
+
+`area()` returns `float` for `reflection_type_erasure`. `direct` and a local `virtual` base use the same formula, which makes this the dispatch comparison. `shapes` has no numeric method. The reflection `draw()` writes to `std::cout`, and the benchmark calls `area()` on its own types.
+
+`copy/` and `build/` time owning a vector. `direct` keeps the object inline. The other benchmarks heap-allocate each object. `shapes` has no copy benchmark: `std::unique_ptr` does not clone the derived object.
+
+Before timing, the executable checks that each family's results match. A mismatch exits with status 1.
 
 ## Local checks
 

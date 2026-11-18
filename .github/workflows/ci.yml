@@ -34,6 +34,7 @@ jobs:
             pkg-config \
             clang-format \
             gcovr \
+            libbenchmark-dev \
             libgmock-dev \
             libgtest-dev \
             python3
@@ -43,6 +44,11 @@ jobs:
 
       - name: Build
         run: cmake --build --preset gcc16
+
+      # The benchmark package is optional at configure time. Building the target
+      # fails the job when find_package skipped it. The executable is not run.
+      - name: Build benchmarks
+        run: cmake --build build --target polymorphism_benchmarks
 
       - name: Test
         run: ctest --test-dir build --output-on-failure --no-tests=error

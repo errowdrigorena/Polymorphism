@@ -31,6 +31,7 @@ if(POLYMORPHISM_COVERAGE)
 endif()
 
 add_subdirectory(src)
+add_subdirectory(benchmarks)
 
 include(CTest)
 if(BUILD_TESTING)
@@ -73,6 +74,7 @@ set(POLYMORPHISM_TARGETS
     draw_shapes
     draw_shapes_polymorphic
     draw_shapes_reflection
+    polymorphism_benchmarks
 )
 set(POLYMORPHISM_TEST_TARGETS
     shapes_tests
@@ -95,11 +97,17 @@ file(GLOB POLYMORPHISM_TEST_FILES CONFIGURE_DEPENDS
     "${CMAKE_SOURCE_DIR}/tests/*.hpp"
     "${CMAKE_SOURCE_DIR}/tests/*.h"
 )
+file(GLOB POLYMORPHISM_BENCHMARK_FILES CONFIGURE_DEPENDS
+    "${CMAKE_SOURCE_DIR}/benchmarks/*.cpp"
+    "${CMAKE_SOURCE_DIR}/benchmarks/*.hpp"
+    "${CMAKE_SOURCE_DIR}/benchmarks/*.h"
+)
 set(POLYMORPHISM_FORMAT_FILES
     ${POLYMORPHISM_CXX_FILES}
     ${POLYMORPHISM_HEADER_FILES}
     ${POLYMORPHISM_MODULE_FILES}
     ${POLYMORPHISM_TEST_FILES}
+    ${POLYMORPHISM_BENCHMARK_FILES}
 )
 list(REMOVE_DUPLICATES POLYMORPHISM_FORMAT_FILES)
 
@@ -198,7 +206,7 @@ if(POLYMORPHISM_COVERAGE)
             "${CMAKE_BINARY_DIR}"
         COMMAND "${CMAKE_COMMAND}" -E cat "${CMAKE_BINARY_DIR}/coverage.txt"
         COMMAND "${PYTHON3_EXE}"
-            "${CMAKE_SOURCE_DIR}/tools/coverage_badge.py"
+            "${CMAKE_SOURCE_DIR}/scripts/coverage_badge.py"
             "${CMAKE_BINARY_DIR}/coverage-summary.json"
             "${CMAKE_SOURCE_DIR}/badges/coverage.svg"
         WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"

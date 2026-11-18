@@ -1,4 +1,11 @@
 build/
 build-sanitizers/
 build-coverage/
+build-benchmarks/
 gcm.cache/
+
+__pycache__/
+*.py[cod]
+
+/cycle.json
+/cycle.svg
