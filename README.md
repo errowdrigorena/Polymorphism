@@ -112,7 +112,7 @@ Coverage and sanitizers are separate configures. Turning both options on in one 
 
 ## Benchmarks
 
-`benchmarks/` builds `polymorphism_benchmarks` with Google Benchmark. It is not a test. The `gcc16` preset compiles it when the package is present, and CI builds the target without running it. Timings come from the Release preset. A Debug run says so and is not worth reading.
+`benchmarks/` builds `polymorphism_benchmarks` with Google Benchmark. It is not a test. The `gcc16` preset compiles it when the package is present. CI builds that target in the Debug preset and does not read those timings. Timings come from the Release preset. A Debug run says so and is not worth reading.
 
 Google Benchmark's headers and `import std;` cannot share a translation unit with this GCC, the same limit as GoogleTest. `benchmark_work` is a module whose interface does not import `std`. `timer.cpp` includes the library and imports that interface. `benchmark_work.cpp` is the implementation unit and imports `std` and the shape modules.
 
@@ -124,15 +124,19 @@ cmake --build --preset gcc16-benchmarks
 
 `--benchmark_filter=area` selects one family. Each iteration walks 12288 objects. `items_per_second` counts one `draw()`, `area()`, copy, or build. The `bytes` counter is `sizeof` the handle, or the object itself for `direct`. Ubuntu's `libbenchmark-dev` is built without `NDEBUG`, so the run prints that the benchmark library is Debug. The code under test still follows the preset.
 
-The libraries do not share one signature, so the names split into `draw/` and `area/`. `direct` stores one concrete type in a contiguous array. The other benchmarks alternate three types.
+Every family times the same five techniques: `direct`, `traditional_polymorphism`, `type_erasure`, `std::polymorphic`, and `reflection_type_erasure`. `direct` stores one concrete type in a contiguous array. The other benchmarks alternate three types.
 
-`draw()` returns `std::string` for `shapes`, `type_erasure`, and `polymorphic`. The iteration builds that string, and the string fits in the small-string buffer. That construction is what these benchmarks measure. `shapes` is a `std::unique_ptr<Shape>`. `type_erasure` stores the same concrete types `direct` calls. Those types are unrelated to `Shape`.
+`draw()` returns `std::string` for `traditional_polymorphism` (`std::unique_ptr<Shape>`), `type_erasure`, and `std::polymorphic`. The iteration builds that string, and the string fits in the small-string buffer. That construction is what these benchmarks measure. `type_erasure` stores the same concrete types `direct` calls. Those types are unrelated to `Shape`. The reflection library's `draw()` writes to `std::cout`, so `reflection_type_erasure` uses `Poly` of a model whose `draw()` returns the same string.
 
-`area()` returns `float` for `reflection_type_erasure`. `direct` and a local `virtual` base use the same formula, which makes this the dispatch comparison. `shapes` has no numeric method. The reflection `draw()` writes to `std::cout`, and the benchmark calls `area()` on its own types.
+`area()` returns `float`. The `shapes` hierarchy and `Shape_TE` have no numeric method, so `traditional_polymorphism`, `type_erasure`, and `std::polymorphic` use a local base with the same formula. `reflection_type_erasure` calls `area()` on the library model.
 
-`copy/` and `build/` time owning a vector. `direct` keeps the object inline. The other benchmarks heap-allocate each object. `shapes` has no copy benchmark: `std::unique_ptr` does not clone the derived object.
+`copy/` and `build/` time owning a vector. `direct` keeps the object inline. The other benchmarks heap-allocate each object. `traditional_polymorphism` copies through a virtual `clone()` because `std::unique_ptr` does not clone the derived object.
 
-Before timing, the executable checks that each family's results match. A mismatch exits with status 1.
+`cycle` is one construct, one `draw()`, one `area()`, and one destroy. `cycle_5`, `cycle_50`, `cycle_500`, and `cycle_5000` alternate `draw()` and `area()` that many times before destruction. An odd count starts and ends on `draw()`, so five calls are three draws and two areas. The even counts are split in half.
+
+Before timing, the executable checks that the five techniques in each family produce the same result. A mismatch exits with status 1.
+
+`scripts/benchmark_families.py` runs `draw`, `area`, `copy`, and `build`, and writes one SVG each under `build-benchmarks/`. `scripts/cycle_chart.py` does the same for `cycle`. `scripts/benchmark_report.py` runs every family once and writes `benchmark_results/README.md` with all five charts. That directory is gitignored. On a push, CI runs the script and commits the directory.
 
 ## Local checks
 
@@ -152,4 +156,4 @@ cmake --build build --target format-check
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs on pushes to `develop` and `master`, and on pull requests. The job uses an Ubuntu resolute container, then the `gcc16`, `gcc16-sanitizers`, and `gcc16-coverage` presets, and finishes with `format-check`.
+`.github/workflows/ci.yml` runs on pushes to `develop` and `master`, and on pull requests. The job uses an Ubuntu resolute container, then the `gcc16`, `gcc16-sanitizers`, and `gcc16-coverage` presets, and finishes with `format-check`. A push also runs the Release benchmark preset and commits `benchmark_results/`.

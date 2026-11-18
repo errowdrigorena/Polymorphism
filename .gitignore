@@ -9,3 +9,6 @@ __pycache__/
 
 /cycle.json
 /cycle.svg
+
+# CI generates this directory and commits it. A local run stays out of the source commit.
+/benchmark_results/

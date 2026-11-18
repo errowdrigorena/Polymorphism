@@ -10,22 +10,23 @@ import type_erasure;
 // every technique, including the direct loop the compiler can see.
 extern "C++" void keep_result(const char* data, unsigned long size);
 
-// Two calls, because the libraries do not share a signature.
-// draw() returns std::string for shapes, type_erasure, and polymorphic.
-// area() returns float for reflection_type_erasure. Its draw() writes to
-// std::cout, so these types do not use that function.
+// Every family checks the same five techniques:
+// direct, traditional_polymorphism, type_erasure, std::polymorphic,
+// and reflection_type_erasure.
+//
+// draw() returns std::string for shapes, type_erasure, and std::polymorphic.
+// The reflection library's draw() writes to std::cout, so that row uses Poly
+// of a model whose draw() returns the same string. area() returns float for
+// the reflection library. shapes and Shape_TE have no numeric method, so the
+// area rows for traditional_polymorphism, type_erasure, and std::polymorphic
+// use a local base with the same formula. unique_ptr does not copy the derived
+// object, so traditional_polymorphism copies through a virtual clone().
 //
 // Each function is one Google Benchmark iteration: a single pass over
-// object_count values. The direct functions keep one concrete type in a
-// contiguous array. virtual is a local base: shapes has no numeric method.
-// shapes stores unique_ptr and has no copy function.
-//
-// cycle_* does the four steps on one object: build, draw(), area(), destroy.
-// traditional_polymorphism is a virtual base in a unique_ptr. The shapes module
-// has no area(), so this row uses that technique with both calls. type_erasure
-// is a hand-written vtable, the same ownership as Shape_TE plus area().
-// std::polymorphic is that virtual base stored in std::polymorphic.
-// reflection_type_erasure is Poly of a model whose methods are draw() and area().
+// object_count values. direct keeps one concrete type in a contiguous array.
+// cycle_* builds, calls draw() and area() once, and destroys.
+// cycle_*_5, _50, _500, and _5000 alternate those calls that many times.
+// Even counts are split in half. Five calls are three draws and two areas.
 
 namespace {
 
@@ -219,7 +220,7 @@ struct ScalarWedge {
     }
 };
 
-// A normal virtual float, so the reflection row has something to sit next to.
+// traditional_polymorphism for area(). The shapes hierarchy has no numeric method.
 // The five special members stay, for the same reason as Shape.
 class Area {
 public:
@@ -230,7 +231,7 @@ public:
     Area(Area&&) noexcept = default;
     Area& operator=(Area&&) noexcept = default;
 
-    virtual float area() = 0;
+    virtual float area() const = 0;
 };
 
 class AreaDisk final : public Area {
@@ -239,7 +240,7 @@ public:
     {
     }
 
-    float area() override
+    float area() const override
     {
         return disk_area(span_);
     }
@@ -254,7 +255,7 @@ public:
     {
     }
 
-    float area() override
+    float area() const override
     {
         return box_area(span_);
     }
@@ -269,9 +270,133 @@ public:
     {
     }
 
-    float area() override
+    float area() const override
     {
         return wedge_area(span_);
+    }
+
+private:
+    float span_;
+};
+
+// Hand-written type erasure for area(). Shape_TE only erases draw().
+class AreaErased {
+public:
+    AreaErased() = default;
+
+    template <typename T>
+        requires(!std::same_as<std::decay_t<T>, AreaErased>)
+    AreaErased(T shape)
+        : object_(new std::decay_t<T>(std::move(shape))),
+          vtable_(&vtable_for<std::decay_t<T>>())
+    {
+    }
+
+    AreaErased(const AreaErased&) = delete;
+    AreaErased& operator=(const AreaErased&) = delete;
+
+    AreaErased(AreaErased&& other) noexcept
+        : object_(std::exchange(other.object_, nullptr)),
+          vtable_(std::exchange(other.vtable_, nullptr))
+    {
+    }
+
+    AreaErased& operator=(AreaErased&&) = delete;
+
+    ~AreaErased()
+    {
+        reset();
+    }
+
+    float area() const
+    {
+        if (object_ == nullptr) {
+            return 0.f;
+        }
+        return vtable_->area(object_);
+    }
+
+private:
+    void reset() noexcept
+    {
+        if (object_ != nullptr) {
+            vtable_->destroy(object_);
+            object_ = nullptr;
+            vtable_ = nullptr;
+        }
+    }
+
+    struct VTable {
+        float (*area)(const void*);
+        void (*destroy)(void*) noexcept;
+    };
+
+    template <typename T> static const VTable& vtable_for() noexcept
+    {
+        static const VTable table{
+            [](const void* object) -> float { return static_cast<const T*>(object)->area(); },
+            [](void* object) noexcept { delete static_cast<T*>(object); },
+        };
+        return table;
+    }
+
+    void* object_ = nullptr;
+    const VTable* vtable_ = nullptr;
+};
+
+// traditional_polymorphism copy. unique_ptr does not clone the derived object,
+// so the copy goes through a virtual clone().
+class CloneShape {
+public:
+    virtual ~CloneShape() = default;
+    CloneShape() = default;
+    CloneShape(const CloneShape&) = default;
+    CloneShape& operator=(const CloneShape&) = default;
+    CloneShape(CloneShape&&) noexcept = default;
+    CloneShape& operator=(CloneShape&&) noexcept = default;
+
+    virtual std::unique_ptr<CloneShape> clone() const = 0;
+};
+
+class CloneDisk final : public CloneShape {
+public:
+    explicit CloneDisk(float span) : span_(span)
+    {
+    }
+
+    std::unique_ptr<CloneShape> clone() const override
+    {
+        return std::make_unique<CloneDisk>(span_);
+    }
+
+private:
+    float span_;
+};
+
+class CloneBox final : public CloneShape {
+public:
+    explicit CloneBox(float span) : span_(span)
+    {
+    }
+
+    std::unique_ptr<CloneShape> clone() const override
+    {
+        return std::make_unique<CloneBox>(span_);
+    }
+
+private:
+    float span_;
+};
+
+class CloneWedge final : public CloneShape {
+public:
+    explicit CloneWedge(float span) : span_(span)
+    {
+    }
+
+    std::unique_ptr<CloneShape> clone() const override
+    {
+        return std::make_unique<CloneWedge>(span_);
     }
 
 private:
@@ -442,6 +567,9 @@ std::vector<ScalarBox> scalar_boxes;
 std::vector<ScalarWedge> scalar_wedges;
 std::vector<std::unique_ptr<Area>> areas;
 std::vector<AnyShape> reflected;
+std::vector<AreaErased> area_erased;
+std::vector<std::polymorphic<Area>> area_polys;
+std::vector<std::unique_ptr<CloneShape>> clone_sources;
 
 template <typename AddDisk, typename AddBox, typename AddWedge>
 void for_each_object(AddDisk add_disk, AddBox add_box, AddWedge add_wedge)
@@ -475,9 +603,27 @@ unsigned long long consume_float(float value)
 
 } // namespace
 
-// reflection_type_erasure. ShapeModel::draw() is void, so this model returns the
-// name and the area. The consteval block stays outside the anonymous namespace:
-// define_aggregate specializes VTable in this namespace.
+// reflection_type_erasure for draw(). ShapeModel::draw() is void and prints,
+// so this model returns the same string the other draw rows return.
+// The consteval block stays outside the anonymous namespace: define_aggregate
+// specializes VTable in this namespace.
+struct DrawModel {
+    virtual ~DrawModel() = default;
+
+    virtual std::string draw() = 0;
+};
+
+consteval
+{
+    define_model<DrawModel>();
+}
+
+namespace {
+std::vector<Poly<DrawModel>> draw_reflected;
+}
+
+// reflection_type_erasure for a full cycle. ShapeModel::draw() is void, so this
+// model returns the name and the area.
 struct CycleModel {
     virtual ~CycleModel() = default;
 
@@ -490,7 +636,7 @@ consteval
     define_model<CycleModel>();
 }
 
-unsigned long long sweep_direct_draw()
+unsigned long long sweep_draw_direct()
 {
     unsigned long long sink = 0;
     for (const ValueDisk& disk : value_disks) {
@@ -505,7 +651,7 @@ unsigned long long sweep_direct_draw()
     return sink;
 }
 
-unsigned long long sweep_shapes()
+unsigned long long sweep_draw_traditional_polymorphism()
 {
     unsigned long long sink = 0;
     for (const std::unique_ptr<Shape>& shape : drawn) {
@@ -514,7 +660,7 @@ unsigned long long sweep_shapes()
     return sink;
 }
 
-unsigned long long sweep_type_erasure()
+unsigned long long sweep_draw_type_erasure()
 {
     unsigned long long sink = 0;
     for (const Shape_TE& shape : erased) {
@@ -523,7 +669,7 @@ unsigned long long sweep_type_erasure()
     return sink;
 }
 
-unsigned long long sweep_polymorphic()
+unsigned long long sweep_draw_std_polymorphic()
 {
     unsigned long long sink = 0;
     for (const PolyShape& shape : polys) {
@@ -532,7 +678,16 @@ unsigned long long sweep_polymorphic()
     return sink;
 }
 
-unsigned long long sweep_direct_area()
+unsigned long long sweep_draw_reflection_type_erasure()
+{
+    unsigned long long sink = 0;
+    for (const Poly<DrawModel>& shape : draw_reflected) {
+        sink += consume_text(shape.draw());
+    }
+    return sink;
+}
+
+unsigned long long sweep_area_direct()
 {
     unsigned long long sink = 0;
     for (ScalarDisk& disk : scalar_disks) {
@@ -547,7 +702,7 @@ unsigned long long sweep_direct_area()
     return sink;
 }
 
-unsigned long long sweep_virtual_area()
+unsigned long long sweep_area_traditional_polymorphism()
 {
     unsigned long long sink = 0;
     for (const std::unique_ptr<Area>& shape : areas) {
@@ -556,7 +711,25 @@ unsigned long long sweep_virtual_area()
     return sink;
 }
 
-unsigned long long sweep_reflection()
+unsigned long long sweep_area_type_erasure()
+{
+    unsigned long long sink = 0;
+    for (const AreaErased& shape : area_erased) {
+        sink += consume_float(shape.area());
+    }
+    return sink;
+}
+
+unsigned long long sweep_area_std_polymorphic()
+{
+    unsigned long long sink = 0;
+    for (const std::polymorphic<Area>& shape : area_polys) {
+        sink += consume_float(shape->area());
+    }
+    return sink;
+}
+
+unsigned long long sweep_area_reflection_type_erasure()
 {
     unsigned long long sink = 0;
     for (AnyShape& shape : reflected) {
@@ -581,19 +754,29 @@ unsigned long long copy_direct()
     return disks.size() + boxes.size() + wedges.size();
 }
 
+unsigned long long copy_traditional_polymorphism()
+{
+    std::vector<std::unique_ptr<CloneShape>> copy;
+    copy.reserve(clone_sources.size());
+    for (const std::unique_ptr<CloneShape>& shape : clone_sources) {
+        copy.push_back(shape->clone());
+    }
+    return copy.size();
+}
+
 unsigned long long copy_type_erasure()
 {
     auto copy = erased;
     return copy.size();
 }
 
-unsigned long long copy_polymorphic()
+unsigned long long copy_std_polymorphic()
 {
     auto copy = polys;
     return copy.size();
 }
 
-unsigned long long copy_reflection()
+unsigned long long copy_reflection_type_erasure()
 {
     auto copy = reflected;
     return copy.size();
@@ -616,7 +799,7 @@ unsigned long long build_direct()
     return disks.size() + boxes.size() + wedges.size();
 }
 
-unsigned long long build_shapes()
+unsigned long long build_traditional_polymorphism()
 {
     std::vector<std::unique_ptr<Shape>> shapes;
     shapes.reserve(object_count);
@@ -636,7 +819,7 @@ unsigned long long build_type_erasure()
     return shapes.size();
 }
 
-unsigned long long build_polymorphic()
+unsigned long long build_std_polymorphic()
 {
     std::vector<PolyShape> shapes;
     shapes.reserve(object_count);
@@ -646,7 +829,7 @@ unsigned long long build_polymorphic()
     return shapes.size();
 }
 
-unsigned long long build_reflection()
+unsigned long long build_reflection_type_erasure()
 {
     std::vector<AnyShape> shapes;
     shapes.reserve(object_count);
@@ -751,6 +934,206 @@ unsigned long long cycle_reflection_type_erasure()
     return sink;
 }
 
+// Even steps call draw(), odd steps call area(). The object dies with the vector.
+template <int Operations>
+unsigned long long alternate_draw_area(auto&& draw, auto&& area)
+{
+    unsigned long long sink = 0;
+    for (int step = 0; step < Operations; ++step) {
+        if (step % 2 == 0) {
+            sink += consume_text(draw());
+        }
+        else {
+            sink += consume_float(area());
+        }
+    }
+    return sink;
+}
+
+template <int Operations>
+unsigned long long cycle_direct_ops()
+{
+    std::vector<ValueDisk> disks;
+    std::vector<ValueBox> boxes;
+    std::vector<ValueWedge> wedges;
+    disks.reserve(object_count / 3);
+    boxes.reserve(object_count / 3);
+    wedges.reserve(object_count / 3);
+    for_each_object([&](float span) { disks.push_back(ValueDisk{span}); },
+                    [&](float span) { boxes.push_back(ValueBox{span}); },
+                    [&](float span) { wedges.push_back(ValueWedge{span}); });
+    keep_bytes(disks.data(), disks.size() * sizeof(ValueDisk));
+    keep_bytes(boxes.data(), boxes.size() * sizeof(ValueBox));
+    keep_bytes(wedges.data(), wedges.size() * sizeof(ValueWedge));
+
+    unsigned long long sink = 0;
+    for (const ValueDisk& disk : disks) {
+        sink += alternate_draw_area<Operations>([&] { return disk.draw(); },
+                                                [&] { return disk.area(); });
+    }
+    for (const ValueBox& box : boxes) {
+        sink += alternate_draw_area<Operations>([&] { return box.draw(); },
+                                                [&] { return box.area(); });
+    }
+    for (const ValueWedge& wedge : wedges) {
+        sink += alternate_draw_area<Operations>([&] { return wedge.draw(); },
+                                                [&] { return wedge.area(); });
+    }
+    return sink;
+}
+
+template <int Operations>
+unsigned long long cycle_traditional_polymorphism_ops()
+{
+    std::vector<std::unique_ptr<CycleShape>> shapes;
+    shapes.reserve(object_count);
+    for_each_object([&](float span) { shapes.push_back(std::make_unique<CycleDisk>(span)); },
+                    [&](float span) { shapes.push_back(std::make_unique<CycleBox>(span)); },
+                    [&](float span) { shapes.push_back(std::make_unique<CycleWedge>(span)); });
+
+    unsigned long long sink = 0;
+    for (const std::unique_ptr<CycleShape>& shape : shapes) {
+        sink += alternate_draw_area<Operations>([&] { return shape->draw(); },
+                                                [&] { return shape->area(); });
+    }
+    return sink;
+}
+
+template <int Operations>
+unsigned long long cycle_type_erasure_ops()
+{
+    std::vector<CycleErased> shapes;
+    shapes.reserve(object_count);
+    for_each_object([&](float span) { shapes.emplace_back(ValueDisk{span}); },
+                    [&](float span) { shapes.emplace_back(ValueBox{span}); },
+                    [&](float span) { shapes.emplace_back(ValueWedge{span}); });
+
+    unsigned long long sink = 0;
+    for (const CycleErased& shape : shapes) {
+        sink += alternate_draw_area<Operations>([&] { return shape.draw(); },
+                                                [&] { return shape.area(); });
+    }
+    return sink;
+}
+
+template <int Operations>
+unsigned long long cycle_std_polymorphic_ops()
+{
+    std::vector<std::polymorphic<CycleShape>> shapes;
+    shapes.reserve(object_count);
+    for_each_object([&](float span) { shapes.emplace_back(std::in_place_type<CycleDisk>, span); },
+                    [&](float span) { shapes.emplace_back(std::in_place_type<CycleBox>, span); },
+                    [&](float span) { shapes.emplace_back(std::in_place_type<CycleWedge>, span); });
+
+    unsigned long long sink = 0;
+    for (const std::polymorphic<CycleShape>& shape : shapes) {
+        sink += alternate_draw_area<Operations>([&] { return shape->draw(); },
+                                                [&] { return shape->area(); });
+    }
+    return sink;
+}
+
+template <int Operations>
+unsigned long long cycle_reflection_type_erasure_ops()
+{
+    std::vector<Poly<CycleModel>> shapes;
+    shapes.reserve(object_count);
+    for_each_object([&](float span) { shapes.emplace_back(ValueDisk{span}); },
+                    [&](float span) { shapes.emplace_back(ValueBox{span}); },
+                    [&](float span) { shapes.emplace_back(ValueWedge{span}); });
+
+    unsigned long long sink = 0;
+    for (const Poly<CycleModel>& shape : shapes) {
+        sink += alternate_draw_area<Operations>([&] { return shape.draw(); },
+                                                [&] { return shape.area(); });
+    }
+    return sink;
+}
+
+unsigned long long cycle_direct_5()
+{
+    return cycle_direct_ops<5>();
+}
+unsigned long long cycle_traditional_polymorphism_5()
+{
+    return cycle_traditional_polymorphism_ops<5>();
+}
+unsigned long long cycle_type_erasure_5()
+{
+    return cycle_type_erasure_ops<5>();
+}
+unsigned long long cycle_std_polymorphic_5()
+{
+    return cycle_std_polymorphic_ops<5>();
+}
+unsigned long long cycle_reflection_type_erasure_5()
+{
+    return cycle_reflection_type_erasure_ops<5>();
+}
+
+unsigned long long cycle_direct_50()
+{
+    return cycle_direct_ops<50>();
+}
+unsigned long long cycle_traditional_polymorphism_50()
+{
+    return cycle_traditional_polymorphism_ops<50>();
+}
+unsigned long long cycle_type_erasure_50()
+{
+    return cycle_type_erasure_ops<50>();
+}
+unsigned long long cycle_std_polymorphic_50()
+{
+    return cycle_std_polymorphic_ops<50>();
+}
+unsigned long long cycle_reflection_type_erasure_50()
+{
+    return cycle_reflection_type_erasure_ops<50>();
+}
+
+unsigned long long cycle_direct_500()
+{
+    return cycle_direct_ops<500>();
+}
+unsigned long long cycle_traditional_polymorphism_500()
+{
+    return cycle_traditional_polymorphism_ops<500>();
+}
+unsigned long long cycle_type_erasure_500()
+{
+    return cycle_type_erasure_ops<500>();
+}
+unsigned long long cycle_std_polymorphic_500()
+{
+    return cycle_std_polymorphic_ops<500>();
+}
+unsigned long long cycle_reflection_type_erasure_500()
+{
+    return cycle_reflection_type_erasure_ops<500>();
+}
+
+unsigned long long cycle_direct_5000()
+{
+    return cycle_direct_ops<5000>();
+}
+unsigned long long cycle_traditional_polymorphism_5000()
+{
+    return cycle_traditional_polymorphism_ops<5000>();
+}
+unsigned long long cycle_type_erasure_5000()
+{
+    return cycle_type_erasure_ops<5000>();
+}
+unsigned long long cycle_std_polymorphic_5000()
+{
+    return cycle_std_polymorphic_ops<5000>();
+}
+unsigned long long cycle_reflection_type_erasure_5000()
+{
+    return cycle_reflection_type_erasure_ops<5000>();
+}
+
 static constexpr unsigned long bytes_of(std::size_t bytes)
 {
     return static_cast<unsigned long>(bytes);
@@ -807,24 +1190,81 @@ void prepare_benchmarks()
     for_each_object([&](float span) { reflected.emplace_back(ScalarDisk{span}); },
                     [&](float span) { reflected.emplace_back(ScalarBox{span}); },
                     [&](float span) { reflected.emplace_back(ScalarWedge{span}); });
+
+    draw_reflected.clear();
+    draw_reflected.reserve(object_count);
+    for_each_object([&](float span) { draw_reflected.emplace_back(ValueDisk{span}); },
+                    [&](float span) { draw_reflected.emplace_back(ValueBox{span}); },
+                    [&](float span) { draw_reflected.emplace_back(ValueWedge{span}); });
+
+    area_erased.clear();
+    area_erased.reserve(object_count);
+    for_each_object([&](float span) { area_erased.emplace_back(ValueDisk{span}); },
+                    [&](float span) { area_erased.emplace_back(ValueBox{span}); },
+                    [&](float span) { area_erased.emplace_back(ValueWedge{span}); });
+
+    area_polys.clear();
+    area_polys.reserve(object_count);
+    for_each_object(
+        [&](float span) { area_polys.emplace_back(std::in_place_type<AreaDisk>, span); },
+        [&](float span) { area_polys.emplace_back(std::in_place_type<AreaBox>, span); },
+        [&](float span) { area_polys.emplace_back(std::in_place_type<AreaWedge>, span); });
+
+    clone_sources.clear();
+    clone_sources.reserve(object_count);
+    for_each_object(
+        [&](float span) { clone_sources.push_back(std::make_unique<CloneDisk>(span)); },
+        [&](float span) { clone_sources.push_back(std::make_unique<CloneBox>(span)); },
+        [&](float span) { clone_sources.push_back(std::make_unique<CloneWedge>(span)); });
 }
 
-BenchmarkSizes benchmark_sizes()
+ApproachBytes draw_bytes()
 {
-    return BenchmarkSizes{
-        .value = bytes_of(sizeof(ValueDisk)),
-        .shape = bytes_of(sizeof(std::unique_ptr<Shape>)),
+    return ApproachBytes{
+        .direct = bytes_of(sizeof(ValueDisk)),
+        .traditional_polymorphism = bytes_of(sizeof(std::unique_ptr<Shape>)),
         .type_erasure = bytes_of(sizeof(Shape_TE)),
-        .polymorphic = bytes_of(sizeof(PolyShape)),
-        .scalar = bytes_of(sizeof(ScalarDisk)),
-        .area = bytes_of(sizeof(std::unique_ptr<Area>)),
-        .reflection = bytes_of(sizeof(AnyShape)),
+        .std_polymorphic = bytes_of(sizeof(PolyShape)),
+        .reflection_type_erasure = bytes_of(sizeof(Poly<DrawModel>)),
     };
 }
 
-CycleBytes cycle_bytes()
+ApproachBytes area_bytes()
 {
-    return CycleBytes{
+    return ApproachBytes{
+        .direct = bytes_of(sizeof(ScalarDisk)),
+        .traditional_polymorphism = bytes_of(sizeof(std::unique_ptr<Area>)),
+        .type_erasure = bytes_of(sizeof(AreaErased)),
+        .std_polymorphic = bytes_of(sizeof(std::polymorphic<Area>)),
+        .reflection_type_erasure = bytes_of(sizeof(AnyShape)),
+    };
+}
+
+ApproachBytes copy_bytes()
+{
+    return ApproachBytes{
+        .direct = bytes_of(sizeof(ValueDisk)),
+        .traditional_polymorphism = bytes_of(sizeof(std::unique_ptr<CloneShape>)),
+        .type_erasure = bytes_of(sizeof(Shape_TE)),
+        .std_polymorphic = bytes_of(sizeof(PolyShape)),
+        .reflection_type_erasure = bytes_of(sizeof(AnyShape)),
+    };
+}
+
+ApproachBytes build_bytes()
+{
+    return ApproachBytes{
+        .direct = bytes_of(sizeof(ValueDisk)),
+        .traditional_polymorphism = bytes_of(sizeof(std::unique_ptr<Shape>)),
+        .type_erasure = bytes_of(sizeof(Shape_TE)),
+        .std_polymorphic = bytes_of(sizeof(PolyShape)),
+        .reflection_type_erasure = bytes_of(sizeof(AnyShape)),
+    };
+}
+
+ApproachBytes cycle_bytes()
+{
+    return ApproachBytes{
         .direct = bytes_of(sizeof(ValueDisk)),
         .traditional_polymorphism = bytes_of(sizeof(std::unique_ptr<CycleShape>)),
         .type_erasure = bytes_of(sizeof(CycleErased)),

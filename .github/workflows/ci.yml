@@ -94,3 +94,23 @@ jobs:
       - name: clang-format
         run: cmake --build build --target format-check
 
+      # Debug timings are not published. This preset is Release.
+      - name: Benchmark results
+        if: github.event_name == 'push'
+        run: python3 scripts/benchmark_report.py
+
+      - name: Publish benchmark results
+        if: github.event_name == 'push'
+        env:
+          GIT_CONFIG_COUNT: "1"
+          GIT_CONFIG_KEY_0: safe.directory
+          GIT_CONFIG_VALUE_0: "*"
+        run: |
+          git add -f benchmark_results
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "Update benchmark results."
+          git push origin "HEAD:${GITHUB_REF}"
+
