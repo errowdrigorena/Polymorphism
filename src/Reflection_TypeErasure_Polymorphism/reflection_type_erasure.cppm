@@ -235,8 +235,8 @@ void assign_slot(auto& table, std::index_sequence<ParameterIndex...>)
         };
     }
     else {
-        table.[:Slot:] =
-            [](void* object, parameter_type_at<Concrete, ParameterIndex>... args) -> Result {
+        table.[:Slot:] = [](void* object,
+                            parameter_type_at<Concrete, ParameterIndex>... args) -> Result {
             return static_cast<T*>(object)->[:Concrete:](
                 std::forward<parameter_type_at<Concrete, ParameterIndex>>(args)...);
         };
@@ -291,8 +291,8 @@ export template <typename Model> class Poly : public Interface<Model> {
             };
         }
         else {
-            target.fn_ =
-                [](void* self, parameter_type_at<Method, ParameterIndex>... args) -> Result {
+            target.fn_ = [](void* self,
+                            parameter_type_at<Method, ParameterIndex>... args) -> Result {
                 auto* poly = static_cast<Poly*>(self);
                 if (poly->object_ == nullptr) {
                     return Result{};

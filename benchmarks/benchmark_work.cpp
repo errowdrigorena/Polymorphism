@@ -287,8 +287,7 @@ public:
     template <typename T>
         requires(!std::same_as<std::decay_t<T>, AreaErased>)
     AreaErased(T shape)
-        : object_(new std::decay_t<T>(std::move(shape))),
-          vtable_(&vtable_for<std::decay_t<T>>())
+        : object_(new std::decay_t<T>(std::move(shape))), vtable_(&vtable_for<std::decay_t<T>>())
     {
     }
 
@@ -487,8 +486,7 @@ public:
     template <typename T>
         requires(!std::same_as<std::decay_t<T>, CycleErased>)
     CycleErased(T shape)
-        : object_(new std::decay_t<T>(std::move(shape))),
-          vtable_(&vtable_for<std::decay_t<T>>())
+        : object_(new std::decay_t<T>(std::move(shape))), vtable_(&vtable_for<std::decay_t<T>>())
     {
     }
 
@@ -543,9 +541,7 @@ private:
     template <typename T> static const VTable& vtable_for() noexcept
     {
         static const VTable table{
-            [](const void* object) -> std::string {
-                return static_cast<const T*>(object)->draw();
-            },
+            [](const void* object) -> std::string { return static_cast<const T*>(object)->draw(); },
             [](const void* object) -> float { return static_cast<const T*>(object)->area(); },
             [](void* object) noexcept { delete static_cast<T*>(object); },
         };
@@ -935,8 +931,7 @@ unsigned long long cycle_reflection_type_erasure()
 }
 
 // Even steps call draw(), odd steps call area(). The object dies with the vector.
-template <int Operations>
-unsigned long long alternate_draw_area(auto&& draw, auto&& area)
+template <int Operations> unsigned long long alternate_draw_area(auto&& draw, auto&& area)
 {
     unsigned long long sink = 0;
     for (int step = 0; step < Operations; ++step) {
@@ -950,8 +945,7 @@ unsigned long long alternate_draw_area(auto&& draw, auto&& area)
     return sink;
 }
 
-template <int Operations>
-unsigned long long cycle_direct_ops()
+template <int Operations> unsigned long long cycle_direct_ops()
 {
     std::vector<ValueDisk> disks;
     std::vector<ValueBox> boxes;
@@ -972,8 +966,8 @@ unsigned long long cycle_direct_ops()
                                                 [&] { return disk.area(); });
     }
     for (const ValueBox& box : boxes) {
-        sink += alternate_draw_area<Operations>([&] { return box.draw(); },
-                                                [&] { return box.area(); });
+        sink +=
+            alternate_draw_area<Operations>([&] { return box.draw(); }, [&] { return box.area(); });
     }
     for (const ValueWedge& wedge : wedges) {
         sink += alternate_draw_area<Operations>([&] { return wedge.draw(); },
@@ -982,8 +976,7 @@ unsigned long long cycle_direct_ops()
     return sink;
 }
 
-template <int Operations>
-unsigned long long cycle_traditional_polymorphism_ops()
+template <int Operations> unsigned long long cycle_traditional_polymorphism_ops()
 {
     std::vector<std::unique_ptr<CycleShape>> shapes;
     shapes.reserve(object_count);
@@ -999,8 +992,7 @@ unsigned long long cycle_traditional_polymorphism_ops()
     return sink;
 }
 
-template <int Operations>
-unsigned long long cycle_type_erasure_ops()
+template <int Operations> unsigned long long cycle_type_erasure_ops()
 {
     std::vector<CycleErased> shapes;
     shapes.reserve(object_count);
@@ -1016,8 +1008,7 @@ unsigned long long cycle_type_erasure_ops()
     return sink;
 }
 
-template <int Operations>
-unsigned long long cycle_std_polymorphic_ops()
+template <int Operations> unsigned long long cycle_std_polymorphic_ops()
 {
     std::vector<std::polymorphic<CycleShape>> shapes;
     shapes.reserve(object_count);
@@ -1033,8 +1024,7 @@ unsigned long long cycle_std_polymorphic_ops()
     return sink;
 }
 
-template <int Operations>
-unsigned long long cycle_reflection_type_erasure_ops()
+template <int Operations> unsigned long long cycle_reflection_type_erasure_ops()
 {
     std::vector<Poly<CycleModel>> shapes;
     shapes.reserve(object_count);

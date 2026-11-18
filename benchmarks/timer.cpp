@@ -344,15 +344,15 @@ int main(int argc, char** argv)
     const bool area_ok = group_matches(
         "area", {sweep_area_direct, sweep_area_traditional_polymorphism, sweep_area_type_erasure,
                  sweep_area_std_polymorphic, sweep_area_reflection_type_erasure});
-    const bool copy_ok = group_matches(
-        "copy", {copy_direct, copy_traditional_polymorphism, copy_type_erasure,
-                 copy_std_polymorphic, copy_reflection_type_erasure});
+    const bool copy_ok =
+        group_matches("copy", {copy_direct, copy_traditional_polymorphism, copy_type_erasure,
+                               copy_std_polymorphic, copy_reflection_type_erasure});
     const bool build_ok =
         group_matches("build", {build_direct, build_traditional_polymorphism, build_type_erasure,
-                                 build_std_polymorphic, build_reflection_type_erasure});
-    const bool cycle_ok = group_matches(
-        "cycle", {cycle_direct, cycle_traditional_polymorphism, cycle_type_erasure,
-                  cycle_std_polymorphic, cycle_reflection_type_erasure});
+                                build_std_polymorphic, build_reflection_type_erasure});
+    const bool cycle_ok =
+        group_matches("cycle", {cycle_direct, cycle_traditional_polymorphism, cycle_type_erasure,
+                                cycle_std_polymorphic, cycle_reflection_type_erasure});
     const bool cycle_5_ok = group_matches(
         "cycle_5", {cycle_direct_5, cycle_traditional_polymorphism_5, cycle_type_erasure_5,
                     cycle_std_polymorphic_5, cycle_reflection_type_erasure_5});
@@ -360,13 +360,12 @@ int main(int argc, char** argv)
         "cycle_50", {cycle_direct_50, cycle_traditional_polymorphism_50, cycle_type_erasure_50,
                      cycle_std_polymorphic_50, cycle_reflection_type_erasure_50});
     const bool cycle_500_ok = group_matches(
-        "cycle_500",
-        {cycle_direct_500, cycle_traditional_polymorphism_500, cycle_type_erasure_500,
-         cycle_std_polymorphic_500, cycle_reflection_type_erasure_500});
-    const bool cycle_5000_ok = group_matches(
-        "cycle_5000",
-        {cycle_direct_5000, cycle_traditional_polymorphism_5000, cycle_type_erasure_5000,
-         cycle_std_polymorphic_5000, cycle_reflection_type_erasure_5000});
+        "cycle_500", {cycle_direct_500, cycle_traditional_polymorphism_500, cycle_type_erasure_500,
+                      cycle_std_polymorphic_500, cycle_reflection_type_erasure_500});
+    const bool cycle_5000_ok =
+        group_matches("cycle_5000", {cycle_direct_5000, cycle_traditional_polymorphism_5000,
+                                     cycle_type_erasure_5000, cycle_std_polymorphic_5000,
+                                     cycle_reflection_type_erasure_5000});
     if (!draw_ok || !area_ok || !copy_ok || !build_ok || !cycle_ok || !cycle_5_ok || !cycle_50_ok ||
         !cycle_500_ok || !cycle_5000_ok) {
         return EXIT_FAILURE;
