@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run every benchmark family and write benchmark_results/README.md.
 
-The page embeds one vertical chart per family. The directory is gitignored.
+The page embeds a time chart and a relative chart per family. The directory is gitignored.
 CI force-adds it and commits it after a push.
 """
 
@@ -103,6 +103,10 @@ def report_markdown(payload: dict) -> str:
                 "",
                 f"![{heading}]({family}.svg)",
                 "",
+                "The chart below leaves out direct. 100% is the fastest of the four, and the others are that time scaled up.",
+                "",
+                f"![{heading}, relative]({family}_relative.svg)",
+                "",
             ]
         )
     return "\n".join(lines)
@@ -122,6 +126,12 @@ def main() -> None:
             aria=title,
         )
         (RESULTS / f"{family}.svg").write_text(chart, encoding="utf-8")
+        relative = benchmark_chart.relative_chart_svg(
+            benchmark_chart.rows_for(payload, family),
+            title=f"{title}, relative",
+            aria=f"{title}, relative to the fastest technique",
+        )
+        (RESULTS / f"{family}_relative.svg").write_text(relative, encoding="utf-8")
     page = RESULTS / "README.md"
     page.write_text(report_markdown(payload), encoding="utf-8")
     print(page)

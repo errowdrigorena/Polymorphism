@@ -136,7 +136,7 @@ Every family times the same five techniques: `direct`, `traditional_polymorphism
 
 Before timing, the executable checks that the five techniques in each family produce the same result. A mismatch exits with status 1.
 
-`scripts/benchmark_families.py` runs `draw`, `area`, `copy`, and `build`, and writes one SVG each under `build-benchmarks/`. `scripts/cycle_chart.py` does the same for `cycle`. `scripts/benchmark_report.py` runs every family once and writes `benchmark_results/README.md` with all five charts. That directory is gitignored. On a push, CI runs the script and commits the directory.
+`scripts/benchmark_families.py` runs `draw`, `area`, `copy`, and `build`, and writes one SVG each under `build-benchmarks/`, plus a relative chart beside it. `scripts/cycle_chart.py` does the same for `cycle`. `scripts/benchmark_report.py` runs every family once and writes `benchmark_results/README.md` with a time chart and a relative chart for each family. The relative chart leaves out `direct`: the fastest of the other four is 100%, and the rest are that time scaled up. That directory is gitignored. On a push, CI runs the script and commits the directory.
 
 ## Local checks
 

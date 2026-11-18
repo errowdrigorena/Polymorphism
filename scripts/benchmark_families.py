@@ -22,14 +22,24 @@ FAMILIES = (
 
 
 def write_family(payload: dict, family: str, title: str, subtitle: str, directory: Path) -> Path:
+    rows = benchmark_chart.rows_for(payload, family)
     chart = directory / f"{family}.svg"
     chart.write_text(
         benchmark_chart.chart_svg(
-            benchmark_chart.rows_for(payload, family),
+            rows,
             title=title,
             subtitle=subtitle,
             ylabel="nanoseconds",
             aria=title,
+        ),
+        encoding="utf-8",
+    )
+    relative = directory / f"{family}_relative.svg"
+    relative.write_text(
+        benchmark_chart.relative_chart_svg(
+            rows,
+            title=f"{title}, relative",
+            aria=f"{title}, relative to the fastest technique",
         ),
         encoding="utf-8",
     )

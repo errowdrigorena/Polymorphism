@@ -104,6 +104,34 @@ def number_label(number: float) -> str:
     return f"{number:.2f}"
 
 
+def tick_label(number: float) -> str:
+    if number == int(number):
+        return str(int(number))
+    return number_label(number)
+
+
+def percent_label(number: float) -> str:
+    rounded = round(number, 1)
+    if rounded == int(rounded):
+        return f"{int(rounded)}%"
+    return f"{rounded:.1f}%"
+
+
+def relative_percent(rows: list[tuple[str, float]]) -> list[tuple[str, float]]:
+    """Scale each technique to the fastest one, leaving direct out.
+
+    The fastest of the remaining techniques is 100%. A technique that takes
+    twice as long is 200%.
+    """
+    kept = [(name, ns) for name, ns in rows if name != "direct"]
+    if not kept:
+        sys.exit("no results after leaving out direct")
+    fastest = min(ns for _, ns in kept)
+    if fastest <= 0:
+        sys.exit("the fastest time is zero")
+    return [(name, ns / fastest * 100.0) for name, ns in kept]
+
+
 def chart_svg(
     rows: list[tuple[str, float]],
     *,
@@ -111,6 +139,9 @@ def chart_svg(
     subtitle: str,
     ylabel: str,
     aria: str,
+    format_value=number_label,
+    format_tick=tick_label,
+    bar_fill: str = "#d97706",
 ) -> str:
     width, height = 760, 480
     margin = {"top": 56, "right": 24, "bottom": 148, "left": 64}
@@ -143,7 +174,7 @@ def chart_svg(
     ]
     for tick in ticks:
         yy = y_of(tick)
-        label = str(int(tick)) if tick == int(tick) else number_label(tick)
+        label = format_tick(tick)
         parts.append(
             f'<line x1="{margin["left"]}" y1="{yy:.1f}" x2="{width - margin["right"]}" '
             f'y2="{yy:.1f}" stroke="#e4e4e4"/>'
@@ -164,11 +195,11 @@ def chart_svg(
         safe_name = html.escape(name)
         parts.append(
             f'<rect x="{cx - bar_w / 2:.1f}" y="{top:.1f}" width="{bar_w:.1f}" '
-            f'height="{base - top:.1f}" fill="#d97706"/>'
+            f'height="{base - top:.1f}" fill="{bar_fill}"/>'
         )
         parts.append(
             f'<text x="{cx:.1f}" y="{top - 6:.1f}" text-anchor="middle" '
-            f'font-family="sans-serif" font-size="11" fill="#1a1a1a">{number_label(ns)}</text>'
+            f'font-family="sans-serif" font-size="11" fill="#1a1a1a">{format_value(ns)}</text>'
         )
         parts.append(
             f'<text x="{cx:.1f}" y="{base + 16:.1f}" text-anchor="end" '
@@ -177,3 +208,16 @@ def chart_svg(
         )
     parts.append("</svg>")
     return "\n".join(parts) + "\n"
+
+
+def relative_chart_svg(rows: list[tuple[str, float]], *, title: str, aria: str) -> str:
+    return chart_svg(
+        relative_percent(rows),
+        title=title,
+        subtitle="100% is the fastest technique. direct is left out.",
+        ylabel="percent of the fastest",
+        aria=aria,
+        format_value=percent_label,
+        format_tick=percent_label,
+        bar_fill="#1d4ed8",
+    )
