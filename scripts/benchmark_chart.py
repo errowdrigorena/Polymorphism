@@ -19,26 +19,35 @@ def run(command: list[str]) -> None:
         sys.exit(completed.returncode)
 
 
-def ensure_binary() -> None:
-    if not BINARY.is_file():
-        run(["cmake", "--preset", "gcc16-benchmarks"])
+def ensure_binary(
+    preset: str = "gcc16-benchmarks",
+    build: Path = BUILD,
+) -> Path:
+    binary = build / "polymorphism_benchmarks"
+    if not binary.is_file():
+        run(["cmake", "--preset", preset])
     run(
         [
             "cmake",
             "--build",
             "--preset",
-            "gcc16-benchmarks",
+            preset,
             "--target",
             "polymorphism_benchmarks",
         ]
     )
-    if not BINARY.is_file():
-        sys.exit(f"missing {BINARY}")
+    if not binary.is_file():
+        sys.exit(f"missing {binary}")
+    return binary
 
 
-def run_benchmarks(results: Path, bench_filter: str | None = None) -> dict:
+def run_benchmarks(
+    results: Path,
+    bench_filter: str | None = None,
+    binary: Path = BINARY,
+) -> dict:
     command = [
-        str(BINARY),
+        str(binary),
         f"--benchmark_out={results}",
         "--benchmark_out_format=json",
     ]

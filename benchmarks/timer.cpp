@@ -334,7 +334,8 @@ void keep_result(const char* data, unsigned long size)
 int main(int argc, char** argv)
 {
 #ifndef NDEBUG
-    std::cerr << "Debug build: timings are not useful. Use the gcc16-benchmarks preset.\n";
+    std::cerr << "Debug build: this is not the published -O0 run. Use "
+                 "gcc16-benchmarks-o0.\n";
 #endif
 
     prepare_benchmarks();

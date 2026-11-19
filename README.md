@@ -17,6 +17,7 @@ Four small C++26 libraries that put shapes behind one interface, built as named 
 ## Contents
 
 - [Layout](#layout)
+- [Documents](#documents)
 - [Requirements](#requirements)
 - [Build and run](#build-and-run)
 - [Sanitizers](#sanitizers)
@@ -36,6 +37,7 @@ Four small C++26 libraries that put shapes behind one interface, built as named 
 | `src/main.cpp` | Demo executable `draw_shapes` |
 | `tests/` | GoogleTest drivers |
 | `benchmarks/` | Release timings for dispatch, copy, and construction |
+| `docs/` | Mechanism notes that do not fit in this file |
 
 ### `shapes`
 
@@ -53,7 +55,14 @@ Re-exports `shapes` and adds `PolyShape`, an alias for `std::polymorphic<Shape>`
 
 `ShapeModel` is the interface every stored type provides: pure virtual `draw()`, `area()`, and `perimeter()`. A method that is not pure virtual stops the build. A namespace-scope `consteval` block reads that class with `std::meta` and uses `define_aggregate` to generate two structs. `VTable<Model>` holds one function pointer per method plus copy and destroy. `Interface<Model>` holds one callable data member per method. `Poly<Model>` owns the object the same way `Shape_TE` does and inherits `Interface<Model>`, so `AnyShape` (`Poly<ShapeModel>`) is called as `shape.area()`. Any type whose public methods match the model, including each parameter type, is accepted. A method may take as many parameters as it declares. Another interface calls `define_model<ThatInterface>()` from its own consteval block.
 
-The library needs `-freflection`. The build compiles GCC's `import std;` module with that flag, so `std::meta` is available to every importer.
+The library needs `-freflection`. The build compiles GCC's `import std;` module with that flag, so `std::meta` is available to every importer. [Reflection](docs/reflection.md) follows the generator from the model class to a call.
+
+## Documents
+
+Build, test, and layout stay in this file. A note under `docs/` is one mechanism, written from the code that implements it.
+
+- [Reflection](docs/reflection.md) is how `define_model` turns a model class into `Poly<Model>`.
+- [Benchmarks](docs/benchmarks.md) is why the five bars are not a ranking of type erasure.
 
 ## Requirements
 
@@ -112,7 +121,7 @@ Coverage and sanitizers are separate configures. Turning both options on in one 
 
 ## Benchmarks
 
-`benchmarks/` builds `polymorphism_benchmarks` with Google Benchmark. It is not a test. The `gcc16` preset compiles it when the package is present. CI builds that target in the Debug preset and does not read those timings. Timings come from the Release preset. A Debug run says so and is not worth reading.
+`benchmarks/` builds `polymorphism_benchmarks` with Google Benchmark. It is not a test. The `gcc16` preset compiles it when the package is present. CI builds that target in the Debug preset and does not read those timings. Published timings are three builds that differ by the optimization flag: `gcc16-benchmarks-o0` is `-O0 -DNDEBUG`, `gcc16-benchmarks-o2` is `-O2 -DNDEBUG`, and `gcc16-benchmarks` is `-O3 -DNDEBUG`. `-O0` is no optimization. The `gcc16` Debug preset is not that run, and its timings are not published.
 
 Google Benchmark's headers and `import std;` cannot share a translation unit with this GCC, the same limit as GoogleTest. `benchmark_work` is a module whose interface does not import `std`. `timer.cpp` includes the library and imports that interface. `benchmark_work.cpp` is the implementation unit and imports `std` and the shape modules.
 
@@ -134,9 +143,9 @@ Every family times the same five techniques: `direct`, `traditional_polymorphism
 
 `cycle` is one construct, one `draw()`, one `area()`, and one destroy. `cycle_5`, `cycle_50`, `cycle_500`, and `cycle_5000` alternate `draw()` and `area()` that many times before destruction. An odd count starts and ends on `draw()`, so five calls are three draws and two areas. The even counts are split in half.
 
-Before timing, the executable checks that the five techniques in each family produce the same result. A mismatch exits with status 1.
+Before timing, the executable checks that the five techniques in each family produce the same result. A mismatch exits with status 1. [Benchmarks](docs/benchmarks.md) explains why those timings do not cover type erasure.
 
-`scripts/benchmark_families.py` runs `draw`, `area`, `copy`, and `build`, and writes one SVG each under `build-benchmarks/`, plus a relative chart beside it. `scripts/cycle_chart.py` does the same for `cycle`. `scripts/benchmark_report.py` runs every family once and writes `benchmark_results/README.md` with a time chart and a relative chart for each family. The relative chart leaves out `direct`: the fastest of the other four is 100%, and the rest are that time scaled up. That directory is gitignored. On a push, CI runs the script and commits the directory.
+`scripts/benchmark_families.py` runs `draw`, `area`, `copy`, and `build`, and writes one SVG each under `build-benchmarks/`, plus a relative chart beside it. `scripts/cycle_chart.py` does the same for `cycle`. `scripts/benchmark_report.py` runs every family at `-O0`, `-O2`, and `-O3`, and writes `benchmark_results/O0/`, `benchmark_results/O2/`, and `benchmark_results/O3/`. `scripts/benchmark_compare.py` draws each family once when those runs are the same machine, with one color per optimization level, under `benchmark_results/compare/`. Each directory's README states the CPU and the compiler flags before the charts. The relative chart leaves out `direct`: the fastest of the other four is 100%, and the rest are that time scaled up. That directory is gitignored. On a push, CI runs the script and commits the directory.
 
 ## Local checks
 
@@ -156,4 +165,4 @@ cmake --build build --target format-check
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs on pushes to `develop` and `master`, and on pull requests. The job uses an Ubuntu resolute container, then the `gcc16`, `gcc16-sanitizers`, and `gcc16-coverage` presets, and finishes with `format-check`. A push also runs the Release benchmark preset and commits `benchmark_results/`.
+`.github/workflows/ci.yml` runs on pushes to `develop` and `master`, and on pull requests. The job uses an Ubuntu resolute container, then the `gcc16`, `gcc16-sanitizers`, and `gcc16-coverage` presets, and finishes with `format-check`. A push also runs the `-O0`, `-O2`, and `-O3` benchmark presets and commits `benchmark_results/`.

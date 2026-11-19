@@ -94,7 +94,7 @@ jobs:
       - name: clang-format
         run: cmake --build build --target format-check
 
-      # Debug timings are not published. This preset is Release.
+      # The gcc16 Debug preset is not published. The script builds -O0, -O2, and -O3.
       - name: Benchmark results
         if: github.event_name == 'push'
         run: python3 scripts/benchmark_report.py

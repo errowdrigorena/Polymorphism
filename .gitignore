@@ -2,6 +2,9 @@ build/
 build-sanitizers/
 build-coverage/
 build-benchmarks/
+build-benchmarks-o0/
+.deps/
+build-benchmarks-o2/
 gcm.cache/
 
 __pycache__/

@@ -32,11 +32,32 @@
     },
     {
       "name": "gcc16-benchmarks",
-      "displayName": "GCC 16 C++26 benchmarks",
+      "displayName": "GCC 16 C++26 benchmarks (-O3)",
       "inherits": "gcc16",
       "binaryDir": "${sourceDir}/build-benchmarks",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG"
+      }
+    },
+    {
+      "name": "gcc16-benchmarks-o0",
+      "displayName": "GCC 16 C++26 benchmarks (-O0)",
+      "inherits": "gcc16",
+      "binaryDir": "${sourceDir}/build-benchmarks-o0",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O0 -DNDEBUG"
+      }
+    },
+    {
+      "name": "gcc16-benchmarks-o2",
+      "displayName": "GCC 16 C++26 benchmarks (-O2)",
+      "inherits": "gcc16",
+      "binaryDir": "${sourceDir}/build-benchmarks-o2",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O2 -DNDEBUG"
       }
     }
   ],
@@ -56,6 +77,14 @@
     {
       "name": "gcc16-benchmarks",
       "configurePreset": "gcc16-benchmarks"
+    },
+    {
+      "name": "gcc16-benchmarks-o0",
+      "configurePreset": "gcc16-benchmarks-o0"
+    },
+    {
+      "name": "gcc16-benchmarks-o2",
+      "configurePreset": "gcc16-benchmarks-o2"
     }
   ]
 }

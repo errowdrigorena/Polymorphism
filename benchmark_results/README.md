@@ -1,59 +1,11 @@
 # Benchmark results
 
-Measured on `c1a8b6c54d93` at 2026-11-18T21:56:32+00:00 with the `gcc16-benchmarks` preset. CPU frequency scaling was disabled.
+Each directory is one optimization level. Read Conditions in that directory before the charts. A bar in one directory is a different run from a bar in the other.
 
-Each bar is the CPU time of the named operation. A cycle bar includes construction, the calls, and destruction. One pass walks 12288 objects.
+- [-O0](O0/README.md) from the `gcc16-benchmarks-o0` preset.
+- [-O2](O2/README.md) from the `gcc16-benchmarks-o2` preset.
+- [-O3](O3/README.md) from the `gcc16-benchmarks` preset.
 
-## Cycle
+`-O0` is no optimization. It still defines `NDEBUG`, so the three directories differ by the `-O` flag. The `gcc16` Debug preset is a different build and is not one of these directories.
 
-Construct, draw, compute the area, and destroy.
-
-![Cycle](cycle.svg)
-
-## Cycle, 5 calls
-
-Construct, alternate draw() and area() five times (three draws and two areas), and destroy.
-
-![Cycle, 5 calls](cycle_5.svg)
-
-## Cycle, 50 calls
-
-Construct, alternate draw() and area() fifty times, and destroy.
-
-![Cycle, 50 calls](cycle_50.svg)
-
-## Cycle, 500 calls
-
-Construct, alternate draw() and area() five hundred times, and destroy.
-
-![Cycle, 500 calls](cycle_500.svg)
-
-## Cycle, 5000 calls
-
-Construct, alternate draw() and area() five thousand times, and destroy.
-
-![Cycle, 5000 calls](cycle_5000.svg)
-
-## Draw
-
-One draw() call. The string fits in the small buffer.
-
-![Draw](draw.svg)
-
-## Area
-
-One area() call. traditional_polymorphism, type_erasure, and std::polymorphic use a local base because the shapes hierarchy has no numeric method.
-
-![Area](area.svg)
-
-## Copy
-
-Copy one owning object. traditional_polymorphism clones through a virtual function because unique_ptr does not copy the derived object.
-
-![Copy](copy.svg)
-
-## Build
-
-Construct one object. direct stores it in the array; the others allocate on the heap.
-
-![Build](build.svg)
+When every level is present and the runs report the same machine, [compare/README.md](compare/README.md) draws each family once, with one color per optimization level.
