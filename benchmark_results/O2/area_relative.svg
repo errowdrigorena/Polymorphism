@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="480" viewBox="0 0 760 480" role="img" aria-label="Time for one area(), relative to the fastest technique">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="64" y="28" font-family="sans-serif" font-size="16" fill="#1a1a1a">Time for one area(), relative</text>
+<text x="64" y="46" font-family="sans-serif" font-size="12" fill="#5c5c5c">100% is the fastest technique. direct is left out.</text>
+<line x1="64" y1="332.0" x2="736" y2="332.0" stroke="#e4e4e4"/>
+<text x="56" y="336.0" text-anchor="end" font-family="sans-serif" font-size="11" fill="#5c5c5c">0%</text>
+<line x1="64" y1="240.0" x2="736" y2="240.0" stroke="#e4e4e4"/>
+<text x="56" y="244.0" text-anchor="end" font-family="sans-serif" font-size="11" fill="#5c5c5c">200%</text>
+<line x1="64" y1="148.0" x2="736" y2="148.0" stroke="#e4e4e4"/>
+<text x="56" y="152.0" text-anchor="end" font-family="sans-serif" font-size="11" fill="#5c5c5c">400%</text>
+<text x="16" y="194" transform="rotate(-90 16 194)" font-family="sans-serif" font-size="12" fill="#1a1a1a">percent of the fastest</text>
+<rect x="132.0" y="286.0" width="32.0" height="46.0" fill="#1d4ed8"/>
+<text x="148.0" y="280.0" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#1a1a1a">100%</text>
+<text x="148.0" y="348.0" text-anchor="end" transform="rotate(-40 148.0 348.0)" font-family="sans-serif" font-size="11" fill="#1a1a1a">traditional_polymorphism</text>
+<rect x="300.0" y="204.3" width="32.0" height="127.7" fill="#1d4ed8"/>
+<text x="316.0" y="198.3" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#1a1a1a">277.5%</text>
+<text x="316.0" y="348.0" text-anchor="end" transform="rotate(-40 316.0 348.0)" font-family="sans-serif" font-size="11" fill="#1a1a1a">type_erasure</text>
+<rect x="468.0" y="259.2" width="32.0" height="72.8" fill="#1d4ed8"/>
+<text x="484.0" y="253.2" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#1a1a1a">158.3%</text>
+<text x="484.0" y="348.0" text-anchor="end" transform="rotate(-40 484.0 348.0)" font-family="sans-serif" font-size="11" fill="#1a1a1a">std::polymorphic</text>
+<rect x="636.0" y="164.8" width="32.0" height="167.2" fill="#1d4ed8"/>
+<text x="652.0" y="158.8" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#1a1a1a">363.4%</text>
+<text x="652.0" y="348.0" text-anchor="end" transform="rotate(-40 652.0 348.0)" font-family="sans-serif" font-size="11" fill="#1a1a1a">reflection_type_erasure</text>
+</svg>

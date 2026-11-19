@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="480" viewBox="0 0 760 480" role="img" aria-label="Time for one cycle">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="64" y="28" font-family="sans-serif" font-size="16" fill="#1a1a1a">Time for one cycle</text>
+<text x="64" y="46" font-family="sans-serif" font-size="12" fill="#5c5c5c">CPU ns · construct, draw, area, and destroy</text>
+<line x1="64" y1="332.0" x2="736" y2="332.0" stroke="#e4e4e4"/>
+<text x="56" y="336.0" text-anchor="end" font-family="sans-serif" font-size="11" fill="#5c5c5c">0</text>
+<line x1="64" y1="263.0" x2="736" y2="263.0" stroke="#e4e4e4"/>
+<text x="56" y="267.0" text-anchor="end" font-family="sans-serif" font-size="11" fill="#5c5c5c">10</text>
+<line x1="64" y1="194.0" x2="736" y2="194.0" stroke="#e4e4e4"/>
+<text x="56" y="198.0" text-anchor="end" font-family="sans-serif" font-size="11" fill="#5c5c5c">20</text>
+<line x1="64" y1="125.0" x2="736" y2="125.0" stroke="#e4e4e4"/>
+<text x="56" y="129.0" text-anchor="end" font-family="sans-serif" font-size="11" fill="#5c5c5c">30</text>
+<text x="16" y="194" transform="rotate(-90 16 194)" font-family="sans-serif" font-size="12" fill="#1a1a1a">nanoseconds per cycle</text>
+<rect x="115.2" y="286.0" width="32.0" height="46.0" fill="#d97706"/>
+<text x="131.2" y="280.0" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#1a1a1a">6.67</text>
+<text x="131.2" y="348.0" text-anchor="end" transform="rotate(-40 131.2 348.0)" font-family="sans-serif" font-size="11" fill="#1a1a1a">direct</text>
+<rect x="249.6" y="187.8" width="32.0" height="144.2" fill="#d97706"/>
+<text x="265.6" y="181.8" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#1a1a1a">20.90</text>
+<text x="265.6" y="348.0" text-anchor="end" transform="rotate(-40 265.6 348.0)" font-family="sans-serif" font-size="11" fill="#1a1a1a">traditional_polymorphism</text>
+<rect x="384.0" y="173.7" width="32.0" height="158.3" fill="#d97706"/>
+<text x="400.0" y="167.7" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#1a1a1a">22.94</text>
+<text x="400.0" y="348.0" text-anchor="end" transform="rotate(-40 400.0 348.0)" font-family="sans-serif" font-size="11" fill="#1a1a1a">type_erasure</text>
+<rect x="518.4" y="184.2" width="32.0" height="147.8" fill="#d97706"/>
+<text x="534.4" y="178.2" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#1a1a1a">21.42</text>
+<text x="534.4" y="348.0" text-anchor="end" transform="rotate(-40 534.4 348.0)" font-family="sans-serif" font-size="11" fill="#1a1a1a">std::polymorphic</text>
+<rect x="652.8" y="167.4" width="32.0" height="164.6" fill="#d97706"/>
+<text x="668.8" y="161.4" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#1a1a1a">23.86</text>
+<text x="668.8" y="348.0" text-anchor="end" transform="rotate(-40 668.8 348.0)" font-family="sans-serif" font-size="11" fill="#1a1a1a">reflection_type_erasure</text>
+</svg>
